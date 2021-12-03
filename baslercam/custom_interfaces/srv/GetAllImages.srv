@@ -1,0 +1,4 @@
+---
+sensor_msgs/Image color
+sensor_msgs/Image left_mono
+sensor_msgs/Image right_mono
