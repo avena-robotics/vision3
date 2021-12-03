@@ -12,6 +12,8 @@ def get_basler_color_image() -> np.ndarray:
     """
     service_result: GetColorImage.Response = call_empty_service_and_get_data('get_basler_color_image', GetColorImage)
     if service_result:
+        if service_result.color.width == 0:
+            return np.array([])
         bridge = CvBridge()
         color_image = bridge.imgmsg_to_cv2(service_result.color)
         return color_image
