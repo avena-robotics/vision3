@@ -7,6 +7,8 @@ from pypylon import pylon
 
 from custom_interfaces.srv import GetAllImages, GetMonoImages, GetColorImage
 
+from basler_drive import BaslerPyDriver
+
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
