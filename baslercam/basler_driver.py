@@ -257,6 +257,7 @@ class BaslerPyDriver(Node):
             cameras.StopGrabbing()
         if cameras.IsOpen():
             cameras.Close()
+        self.get_logger().info("cameras are closed")
 
     def close_basler_cameras_cb(self, request: Trigger.Request , response: Trigger.Response) -> Trigger.Response:
         """Callback for closing cameras as a response to service call
