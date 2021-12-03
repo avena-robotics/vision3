@@ -42,8 +42,8 @@ class ColorImageEventHandler(pylon.ImageEventHandler):
             CVError: An error occurred accessing the cv numpy array.
         """
         if grab_result.GrabSucceeded():
-            self.color_image = grab_result.GetArray()
-            self.color_image = cv2.rotate(self.color_image,cv2.ROTATE_90_COUNTERCLOCKWISE)
+            temp = grab_result.GetArray()
+            self.color_image = cv2.rotate(temp, cv2.ROTATE_90_COUNTERCLOCKWISE)
             self.color_hd_image = cv2.resize(self.color_image, (self.color_image.shape[1]//3, self.color_image.shape[0]//3), interpolation = cv2.INTER_AREA)
             grab_result.Release()
 
@@ -74,8 +74,8 @@ class LeftMonoImageEventHandler(pylon.ImageEventHandler):
             CVError: An error occurred accessing the cv numpy array
         """
         if grab_result.GrabSucceeded():
-            self.left_mono_image = grab_result.GetArray()
-            self.left_mono_image = cv2.rotate(self.left_mono_image,cv2.ROTATE_90_COUNTERCLOCKWISE)
+            temp = grab_result.GetArray()
+            self.left_mono_image = cv2.rotate(temp, cv2.ROTATE_90_COUNTERCLOCKWISE)
             grab_result.Release()
 
 
@@ -106,8 +106,8 @@ class RightMonoEventHandler(pylon.ImageEventHandler):
             CVError: An error occurred accessing the cv numpy array.
         """
         if grab_result.GrabSucceeded():
-            self.right_mono_image = grab_result.GetArray()
-            self.right_mono_image = cv2.rotate(self.right_mono_image,cv2.ROTATE_90_COUNTERCLOCKWISE)
+            temp = grab_result.GetArray()
+            self.right_mono_image = cv2.rotate(temp, cv2.ROTATE_90_COUNTERCLOCKWISE)
             grab_result.Release()
 
 
