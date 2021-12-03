@@ -18,7 +18,7 @@ from scipy.spatial.transform import Rotation as R
 
 
 # Configuration
-path_to_folder = '/home/avena/vision/vision/basler/datasets/dataset001'
+path_to_folder = '/home/avena/vision3/calib/dataset_example'
 output_file = 'basler_configuration.json'
 acceptance_threshold = 60  # minimal number of detected markers 
                            # on each image when calibrating in stereo
