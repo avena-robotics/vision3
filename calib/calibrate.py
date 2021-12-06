@@ -18,7 +18,7 @@ from scipy.spatial.transform import Rotation as R
 
 
 # Configuration
-path_to_folder = '/home/avena/vision3/calib/dataset_example'
+path_to_folder = '/home/avena/vision3/calib/dataset001'
 output_file = 'basler_configuration.json'
 acceptance_threshold = 60  # minimal number of detected markers 
                            # on each image when calibrating in stereo
@@ -313,6 +313,7 @@ left_mono_to_right_mono_extrinsic = {"T": {"x": tran_l_r[0][0],
                                            "w": quat1[3]},
                                      "parent": "left_mono",
                                      "child": "right_mono"}
+print('\nLeft mono to right mono transform:', json.dumps(left_mono_to_right_mono_extrinsic, indent=4), sep='\n')
 
 # Left mono to color
 rotation = R.from_matrix(rot_l_color)
@@ -326,6 +327,7 @@ left_mono_to_color_extrinsic = {"T": {"x": trans_l_color[0][0],
                                       "w": quat1[3]},
                                 "parent": "left_mono",
                                 "child": "color"}
+print('\nLeft mono to color transform:', json.dumps(left_mono_to_color_extrinsic, indent=4), sep='\n')
 
 output_json = {
     "intrinsic": 
