@@ -217,8 +217,11 @@ right_mono_imgs_paths = sorted(glob.glob(path_to_folder + '/*_right_mono.png'))
 color_imgs_paths = sorted(glob.glob(path_to_folder + '/*_color.png'))
 
 # Detect Charuco markers for each camera
+print('Detecting Charuco corners on left mono images')
 left_mono_corners, left_mono_corners_ids, imsize =                 analyze_charuco(left_mono_imgs_paths, aruco_dict, board)
+print('Detecting Charuco corners on right mono images')
 right_mono_corners, right_mono_corners_ids, imsize =                 analyze_charuco(right_mono_imgs_paths, aruco_dict, board)
+print('Detecting Charuco corners on color images')
 color_corners, color_corners_ids, imsize =                 analyze_charuco(color_imgs_paths, aruco_dict, board)
 
 # Sample image with corners drawn for each camera
@@ -232,8 +235,11 @@ plt.axis('off')
 plt.show()
 
 # Calibrate camera using detected corners for each camera
+print('Calibrate left mono camera')
 left_mono_repr_err, left_mono_cam_mat, left_mono_dist_coeff =             calibrate_camera(left_mono_corners, left_mono_corners_ids, imsize)
+print('Calibrate right mono camera')
 right_mono_repr_err, right_mono_cam_mat, right_mono_dist_coeff =             calibrate_camera(right_mono_corners, right_mono_corners_ids, imsize)
+print('Calibrate color camera')
 color_repr_err, color_cam_mat, color_dist_coeff =             calibrate_camera(color_corners, color_corners_ids, imsize)
 
 print('\nLeft mono reprojection error:', left_mono_repr_err)
@@ -244,6 +250,7 @@ print('\nRight mono distortion coefficients:', right_mono_dist_coeff, sep='\n')
 print('\nColor distortion coefficients:', color_dist_coeff, sep='\n')
 
 # Calibrate stereo between left and right mono camera
+print('Calibrate left mono to right mono cameras')
 repr_erro_l_r, rot_l_r, tran_l_r =             calibrate_stereo_camera(left_mono_corners, left_mono_corners_ids, 
                                     right_mono_corners, right_mono_corners_ids,
                                     imsize, left_mono_cam_mat, left_mono_dist_coeff, 
@@ -251,6 +258,7 @@ repr_erro_l_r, rot_l_r, tran_l_r =             calibrate_stereo_camera(left_mono
                                     board, acceptance_threshold=acceptance_threshold)
 
 # Calibrate stereo between left and color
+print('Calibrate left mono to color cameras')
 repr_erro_l_color, rot_l_color, trans_l_color =             calibrate_stereo_camera(left_mono_corners, left_mono_corners_ids, 
                                     color_corners, color_corners_ids,
                                     imsize, left_mono_cam_mat, left_mono_dist_coeff, 
