@@ -1,4 +1,3 @@
-// id, Name-unique, number of obj instances, category (1 - consumables, 2 - containers, 3 - tools, 4 - alert_items)
 {
  "0":["Apple", 18, 1], 
  "1":["Banana", 13, 1],
