@@ -11,7 +11,7 @@ public:
         try
         {
             const uint8_t basler_binning = 1;
-            const float basler_mono_brightness = 0.15;
+            const float basler_mono_brightness = 0.3;
 
             auto &cam_nodemap = camera.GetNodeMap();
             auto width = Pylon::CIntegerParameter(cam_nodemap, "Width").GetValue();
