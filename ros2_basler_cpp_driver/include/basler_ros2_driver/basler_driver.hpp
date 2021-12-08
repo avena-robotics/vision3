@@ -108,7 +108,7 @@ namespace basler
          * @param[in] basler_cameras Array of basler cameras to close
          * \return Error code for success or failure of closing camera devices
          */
-        void _closeBaslerCameras(std::shared_ptr<Pylon::CInstantCameraArray> &basler_cameras);
+        void _closeBaslerCameras();
 
         void _getAllImagesCb(const std::shared_ptr<GetAllImages::Request> request,
                              std::shared_ptr<GetAllImages::Response> response);
