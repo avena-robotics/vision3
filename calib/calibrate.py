@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[7]:
+# In[1]:
 
 
 # Import necessary packages
@@ -14,12 +14,12 @@ import json
 from scipy.spatial.transform import Rotation as R
 
 
-# In[8]:
+# In[2]:
 
 
 # Configuration
-path_to_folder = '/home/avena/vision3/calib/dataset001'
-output_file = 'basler_configuration.json'
+path_to_folder = '/home/avena/dataset001'
+output_file = 'basler_calibration.json'
 acceptance_threshold = 60  # minimal number of detected markers 
                            # on each image when calibrating in stereo
 
@@ -34,7 +34,7 @@ board = cv2.aruco.CharucoBoard_create(squaresX=12,
                                       dictionary=aruco_dict)
 
 
-# In[9]:
+# In[3]:
 
 
 # Execute script
@@ -204,6 +204,48 @@ def calibrate_stereo_camera(all_corners_l, all_ids_l, all_corners_r, all_ids_r, 
     
     return reprojection_error, rotation, translation
 
+
+def calc_rectification_maps(left_cam_mat, left_dist_coeffs, 
+                            right_cam_mat, right_dist_coeffs, 
+                            rot_matrix, trans_vec,
+                            imsize):
+    """Calculate rectification parameters for two cameras.
+    
+    This function is responsible for calculating rectification parameters for 
+    set of 2 cameras in stereo setup. To properly calculate this transforms,
+    user has to provide camera matrices, distortion coefficients and transform
+    between cameras in cartesian space (translation and rotation).
+    
+    Args:
+        left_cam_mat: camera matrix with intrinsic for left camera (fx, fy, cx, fy in 3x3 matrix),
+        left_dist_coeffs: distortion coefficients for left camera (k1, k2, p1, p2, k3), 
+        right_cam_mat: camera matrix with intrinsic for right camera (fx, fy, cx, fy in 3x3 matrix),
+        right_dist_coeffs: distortion coefficients for right camera (k1, k2, p1, p2, k3),
+        rot_matrix: rotation part of transform between cameras (3x3 matrix),
+        trans_vec: translation part of transform between cameras (3x1 matrix),
+        imsize: resolution of images used for calibration.
+    
+    Returns:
+        Tuple with 5 elements:
+            - 3x3 rectification transform (rotation matrix) for the left camera.
+            - 3x3 rectification transform (rotation matrix) for the right camera.
+            - 3x4 projection matrix in the new (rectified) coordinate systems for the left camera,
+            - 3x4 projection matrix in the new (rectified) coordinate systems for the right camera.
+            - 4x4 disparity-to-depth mapping matrix
+    """
+    R_left, R_right, P_left, P_right, Q, left_roi, right_roi = cv2.stereoRectify(left_cam_mat,
+                                                                                 left_dist_coeffs,
+                                                                                 right_cam_mat,
+                                                                                 right_dist_coeffs,
+                                                                                 imsize,
+                                                                                 rot_matrix,
+                                                                                 trans_vec,
+                                                                                 1,
+                                                                                 (0, 0),
+                                                                                 flags=0,
+                                                                                 )
+    return R_left, R_right, P_left, P_right, Q
+
 # Draw CHARUCO board model
 plt.figure(figsize=(15, 10))
 plt.title('Charuco board')
@@ -212,9 +254,9 @@ plt.axis('off')
 plt.show()
 
 # Load images paths
-left_mono_imgs_paths = sorted(glob.glob(path_to_folder + '/*_left_mono.png'))
-right_mono_imgs_paths = sorted(glob.glob(path_to_folder + '/*_right_mono.png'))
-color_imgs_paths = sorted(glob.glob(path_to_folder + '/*_color.png'))
+left_mono_imgs_paths = sorted(glob.glob(os.path.join(path_to_folder, '*_left_mono.png')))
+right_mono_imgs_paths = sorted(glob.glob(os.path.join(path_to_folder, '*_right_mono.png')))
+color_imgs_paths = sorted(glob.glob(os.path.join(path_to_folder, '*_color.png')))
 
 # Detect Charuco markers for each camera
 print('Detecting Charuco corners on left mono images')
@@ -251,7 +293,7 @@ print('\nColor distortion coefficients:', color_dist_coeff, sep='\n')
 
 # Calibrate stereo between left and right mono camera
 print('Calibrate left mono to right mono cameras')
-repr_erro_l_r, rot_l_r, tran_l_r =             calibrate_stereo_camera(left_mono_corners, left_mono_corners_ids, 
+repr_erro_l_r, rot_l_r, trans_l_r =             calibrate_stereo_camera(left_mono_corners, left_mono_corners_ids, 
                                     right_mono_corners, right_mono_corners_ids,
                                     imsize, left_mono_cam_mat, left_mono_dist_coeff, 
                                     right_mono_cam_mat, right_mono_dist_coeff,
@@ -270,6 +312,16 @@ with np.printoptions(suppress=True):
     print('\nRight mono camera matrix:', right_mono_cam_mat, sep='\n')
     print('\nColor camera matrix:', color_cam_mat, sep='\n')
 
+print('Calculate rectification map for left mono to right mono')
+R_left_l_r, R_right_l_r, P_left_l_r, P_right_l_r, Q_l_r = calc_rectification_maps(left_mono_cam_mat, left_mono_dist_coeff, 
+                                                                                  right_mono_cam_mat, right_mono_dist_coeff,
+                                                                                  rot_l_r, trans_l_r, imsize)
+
+print('Calculate rectification map for left mono to color')
+R_left_l_color, R_right_l_color, P_left_l_color, P_right_l_color, Q_l_color = calc_rectification_maps(left_mono_cam_mat, left_mono_dist_coeff, 
+                                                                                                      color_cam_mat, color_dist_coeff,
+                                                                                                      rot_l_color, trans_l_color, imsize)
+        
 # Save calibration results to file
 left_mono_intrinsic = {"fx": left_mono_cam_mat[0][0],
                        "fy": left_mono_cam_mat[1][1],
@@ -304,9 +356,9 @@ color_intrinsic = {"fx": color_cam_mat[0][0],
 # Left mono to right mono
 rotation = R.from_matrix(rot_l_r)
 quat1 = rotation.as_quat()
-left_mono_to_right_mono_extrinsic = {"T": {"x": tran_l_r[0][0],
-                                           "y": tran_l_r[1][0],
-                                           "z": tran_l_r[2][0]},
+left_mono_to_right_mono_extrinsic = {"T": {"x": trans_l_r[0][0],
+                                           "y": trans_l_r[1][0],
+                                           "z": trans_l_r[2][0]},
                                      "R": {"x": quat1[0],
                                            "y": quat1[1],
                                            "z": quat1[2],
@@ -329,6 +381,25 @@ left_mono_to_color_extrinsic = {"T": {"x": trans_l_color[0][0],
                                 "child": "color"}
 print('\nLeft mono to color transform:', json.dumps(left_mono_to_color_extrinsic, indent=4), sep='\n')
 
+# Rectification left mono to right mono
+rect_left_mono_to_right_mono = {'R_left': R_left_l_r.tolist(),
+                                'R_right': R_right_l_r.tolist(),
+                                'P_left': P_left_l_r.tolist(),
+                                'P_right': P_right_l_r.tolist(),
+                                'Q': Q_l_r.tolist(),
+                                "parent": "left_mono",
+                                "child": "right_mono"}
+
+# Rectification left mono to color
+rect_left_mono_to_color = {'R_left': R_left_l_color.tolist(),
+                           'R_right': R_right_l_color.tolist(),
+                           'P_left': P_left_l_color.tolist(),
+                           'P_right': P_right_l_color.tolist(),
+                           'Q': Q_l_color.tolist(),
+                           'parent': 'left_mono',
+                           'child': 'color'}
+
+
 output_json = {
     "intrinsic": 
     {
@@ -340,7 +411,12 @@ output_json = {
     [
         left_mono_to_right_mono_extrinsic, 
         left_mono_to_color_extrinsic,
-    ]
+    ],
+    'rect':
+    [
+        rect_left_mono_to_right_mono,
+        rect_left_mono_to_color
+    ],
 }
 
 with open(output_file, 'w') as f:
