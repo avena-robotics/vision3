@@ -16,7 +16,7 @@ namespace basler
     BaslerROS2Driver::~BaslerROS2Driver()
     {
 
-        if (_avena_basler_cameras != nullptr && (_avena_basler_cameras->IsOpen() ||_avena_basler_cameras->IsGrabbing()) )
+        if (_avena_basler_cameras != nullptr && (_avena_basler_cameras->IsOpen() || _avena_basler_cameras->IsGrabbing()))
         {
             _closeBaslerCameras();
         }
@@ -188,7 +188,7 @@ namespace basler
         {
             _avena_basler_cameras->Close();
         }
-        
+
         for (size_t camera_idx = 0; camera_idx < _avena_basler_cameras->GetSize(); camera_idx++)
         {
 
@@ -244,7 +244,11 @@ namespace basler
         // _color_config_handler.reset();
         // _left_mono_config_handler.reset();
         // _right_mono_config_handler.reset();
-        // _timer->cancel();
+        if (!_timer->is_canceled())
+        {
+            _timer->cancel();
+        }
+
         // _avena_basler_cameras.reset();
 
         RCLCPP_INFO(this->get_logger(), "cameras are closed");
