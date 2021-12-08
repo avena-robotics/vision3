@@ -35,13 +35,19 @@ namespace basler
                 }
                 if (!_color_4k_image.empty())
                 {
+                    auto resize_start = std::chrono::system_clock::now();
                     cv::resize(_color_4k_image, _color_hd_image, cv::Size(static_cast<uint16_t>(_color_4k_image.size().width / 3), static_cast<uint16_t>(_color_4k_image.size().height / 3)), cv::INTER_AREA);
+                    // std::cout << "resize" << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - resize_start).count()  << std::endl;
+                    std::cout << "resize" << std::chrono::duration<double>(std::chrono::system_clock::now() - resize_start).count() * 1000 << std::endl;
                     if (_color_hd_image.size().width > 0)
                     {
                         auto hd_color_image_msg = std::make_shared<sensor_msgs::msg::Image>();
                         hd_color_image_msg->header.frame_id = "/basler/color/image_raw";
                         // hd_color_image_msg->header.stamp.sec = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).count()/10e9;
+                        auto start = std::chrono::system_clock::now();
                         cv_bridge::CvImagePtr cv_ptr = std::make_shared<cv_bridge::CvImage>(hd_color_image_msg->header, sensor_msgs::image_encodings::BGR8, _color_hd_image);
+                        std::cout << "cv bridge" << std::chrono::duration<double>(std::chrono::system_clock::now() - start).count() * 1000 << std::endl;
+
                         try
                         {
                             hd_color_image_msg = cv_ptr->toImageMsg();
@@ -53,7 +59,9 @@ namespace basler
                         }
                         if (_bgr_color_publisher->get_subscription_count() > 0 && hd_color_image_msg->width > 0)
                         {
+                            auto pub_start = std::chrono::system_clock::now();
                             _bgr_color_publisher->publish(*hd_color_image_msg);
+                            std::cout << "pub" << std::chrono::duration<double>(std::chrono::system_clock::now() - pub_start).count() * 1000 << std::endl;
                         }
                     }
                 }
