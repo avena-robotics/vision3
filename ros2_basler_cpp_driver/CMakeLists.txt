@@ -4,8 +4,8 @@ project(basler_ros2_driver)
 
 # Default to C++17
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_BUILD_TYPE RELEASE)
-# set(CMAKE_BUILD_TYPE DEBUG)
+# set(CMAKE_BUILD_TYPE RELEASE)
+set(CMAKE_BUILD_TYPE DEBUG)
 add_compile_options(-Wall -Wextra -Wpedantic)
 
 # find dependencies

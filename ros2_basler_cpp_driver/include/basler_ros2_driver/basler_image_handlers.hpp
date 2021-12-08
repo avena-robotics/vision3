@@ -21,8 +21,8 @@ namespace basler
 
     private:
         cv::Mat _color_4k_image,_color_hd_image;
-        // mutable std::mutex _hd_color_mutex,_4k_color_mutex;
-        mutable std::shared_mutex _hd_color_mutex,_4k_color_mutex;
+        mutable std::mutex _hd_color_mutex,_4k_color_mutex;
+        // mutable std::shared_mutex _hd_color_mutex,_4k_color_mutex;
     };
     class LeftMonoImageEventHandler : public Pylon::CImageEventHandler
     {
@@ -30,14 +30,14 @@ namespace basler
         LeftMonoImageEventHandler() = default;
         LeftMonoImageEventHandler(const LeftMonoImageEventHandler &) = delete;
         LeftMonoImageEventHandler &operator=(const LeftMonoImageEventHandler &) = delete;
-        virtual ~LeftMonoImageEventHandler() = default;
+        virtual ~LeftMonoImageEventHandler() {std::cout << "somebody called descrutor\n";};
         void OnImageGrabbed(Pylon::CInstantCamera &camera, const Pylon::CGrabResultPtr &grabResult) override;
         cv::Mat getLeftMonoImage() const;
 
     private:
         cv::Mat _left_mono_image;
-        // mutable std::mutex _left_mono_mutex;
-        mutable std::shared_mutex _left_mono_mutex;
+        mutable std::mutex _left_mono_mutex;
+        // mutable std::shared_mutex _left_mono_mutex;
     };
     class RightMonoEventHandler : public Pylon::CImageEventHandler
     {
@@ -51,8 +51,8 @@ namespace basler
 
     private:
         cv::Mat _right_mono_image;
-        // mutable std::mutex _right_mono_mutex;
-        mutable std::shared_mutex _right_mono_mutex;
+        mutable std::mutex _right_mono_mutex;
+        // mutable std::shared_mutex _right_mono_mutex;
     };
 } // namespace basler
 
