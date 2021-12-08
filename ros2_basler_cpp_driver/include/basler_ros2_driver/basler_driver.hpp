@@ -3,13 +3,10 @@
 
 // __HEADERs__
 
-// _ROS_
-#include <rclcpp/rclcpp.hpp>
-#include <sensor_msgs/msg/image.hpp>
+
 #include <std_srvs/srv/trigger.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <ament_index_cpp/get_package_share_directory.hpp>
-#include <cv_bridge/cv_bridge.h>
 #include <std_srvs/srv/trigger.hpp>
 // _CPP_
 #include <chrono>
@@ -34,9 +31,6 @@
 namespace basler
 {
     // __Deductions__
-
-    // _ROS_
-    using Image = sensor_msgs::msg::Image;
     // _PYLON_
     using CamName_CamSerial = std::map<std::string, std::string>;
     // _CPP_
@@ -72,7 +66,7 @@ namespace basler
         // publishers
         rclcpp::Publisher<Image>::SharedPtr _bgr_color_publisher;
         // timers
-        rclcpp::TimerBase::SharedPtr _timer;
+        // rclcpp::TimerBase::SharedPtr _timer;
         // service servers
         rclcpp::Service<Trigger>::SharedPtr _open_basler_cameras_server;
         rclcpp::Service<Trigger>::SharedPtr _close_basler_cameras_server;

@@ -3,6 +3,7 @@
 
 namespace basler
 {
+    ColorImageEventHandler::ColorImageEventHandler(const rclcpp::Publisher<Image>::SharedPtr &hd_image_publihser) : _bgr_color_publisher(hd_image_publihser) {}
     cv::Mat ColorImageEventHandler::get4kColorImage() const
     {
         // std::shared_lock lock(_4k_color_mutex);
@@ -10,13 +11,13 @@ namespace basler
         cv::Mat temp_4k_color_image = _color_4k_image.clone();
         return temp_4k_color_image;
     }
-    cv::Mat ColorImageEventHandler::getHDColorImage() const
-    {
-        // std::shared_lock lock(_hd_color_mutex);
-        std::lock_guard lock(_hd_color_mutex);
-        cv::Mat temp_color_hd_image = _color_hd_image.clone();
-        return temp_color_hd_image;
-    }
+    // cv::Mat ColorImageEventHandler::getHDColorImage() const
+    // {
+    //     // std::shared_lock lock(_hd_color_mutex);
+    //     std::lock_guard lock(_hd_color_mutex);
+    //     cv::Mat temp_color_hd_image = _color_hd_image.clone();
+    //     return temp_color_hd_image;
+    // }
     void ColorImageEventHandler::OnImageGrabbed(Pylon::CInstantCamera & /*camera*/, const Pylon::CGrabResultPtr &grabResult)
     {
         try
@@ -32,21 +33,42 @@ namespace basler
                         cv::rotate(color_4k_image, _color_4k_image, cv::ROTATE_90_COUNTERCLOCKWISE);
                     }
                 }
-            }
-            {
-                // std::unique_lock hd_lock(_hd_color_mutex);
-                // std::shared_lock lock(_4k_color_mutex);
-                std::lock_guard lock(_hd_color_mutex);
                 if (!_color_4k_image.empty())
                 {
                     cv::resize(_color_4k_image, _color_hd_image, cv::Size(static_cast<uint16_t>(_color_4k_image.size().width / 3), static_cast<uint16_t>(_color_4k_image.size().height / 3)), cv::INTER_AREA);
+                    if (_color_hd_image.size().width > 0)
+                    {
+                        auto hd_color_image_msg = std::make_shared<sensor_msgs::msg::Image>();
+                        hd_color_image_msg->header.frame_id = "/basler/color/image_raw";
+                        // hd_color_image_msg->header.stamp.sec = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).count()/10e9;
+                        cv_bridge::CvImagePtr cv_ptr = std::make_shared<cv_bridge::CvImage>(hd_color_image_msg->header, sensor_msgs::image_encodings::BGR8, _color_hd_image);
+                        try
+                        {
+                            hd_color_image_msg = cv_ptr->toImageMsg();
+                        }
+                        catch (cv_bridge::Exception &e)
+                        {
+                            std::cerr << e.what() << std::endl;
+                            return;
+                        }
+                        if (_bgr_color_publisher->get_subscription_count() > 0 && hd_color_image_msg->width > 0)
+                        {
+                            _bgr_color_publisher->publish(*hd_color_image_msg);
+                        }
+                    }
                 }
+                // {
+                // std::unique_lock hd_lock(_hd_color_mutex);
+                // std::shared_lock lock(_4k_color_mutex);
+                // std::lock_guard lock(_hd_color_mutex);
+
+                // }
+                // else
+                // {
+                //     std::cerr << "Grab Failed" << '\n';
+                //     return;
+                // }
             }
-            // else
-            // {
-            //     std::cerr << "Grab Failed" << '\n';
-            //     return;
-            // }
         }
         catch (const std::exception &e)
         {

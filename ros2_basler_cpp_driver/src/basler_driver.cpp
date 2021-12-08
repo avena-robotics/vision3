@@ -74,7 +74,7 @@ namespace basler
                         if (camera_group_serials.at(device_serial) == "color")
                         {
                             // _color_handler = std::make_shared<ColorImageEventHandler>();
-                            _color_handler = new ColorImageEventHandler();
+                            _color_handler = new ColorImageEventHandler(_bgr_color_publisher);
                             // _color_config_handler = std::make_shared<ColorCameraConfigurationHandler>();
                             _color_config_handler = new ColorCameraConfigurationHandler();
                             (*_avena_basler_cameras)[camera_idx].RegisterImageEventHandler(_color_handler, Pylon::RegistrationMode_Append, Pylon::Cleanup_Delete);
@@ -128,8 +128,8 @@ namespace basler
         RCLCPP_INFO(this->get_logger(), "Open Basler cameras is called");
         if (_avena_basler_cameras == nullptr || _avena_basler_cameras->IsOpen() != true)
         {
-            _timer = this->create_wall_timer(
-                std::chrono::duration<double>(_hd_color_fps), std::bind(&BaslerROS2Driver::_baslerColorHdCb, this));
+            // _timer = this->create_wall_timer(
+            //     std::chrono::duration<double>(_hd_color_fps), std::bind(&BaslerROS2Driver::_baslerColorHdCb, this));
             _openBaslerCameras(_camera_group_serials);
             if (_avena_basler_cameras != nullptr || _avena_basler_cameras->IsGrabbing())
             {
@@ -244,10 +244,10 @@ namespace basler
         // _color_config_handler.reset();
         // _left_mono_config_handler.reset();
         // _right_mono_config_handler.reset();
-        if (!_timer->is_canceled())
-        {
-            _timer->cancel();
-        }
+        // if (!_timer->is_canceled())
+        // {
+        //     _timer->cancel();
+        // }
 
         // _avena_basler_cameras.reset();
 
@@ -268,33 +268,33 @@ namespace basler
             response->success = true;
         }
     }
-    void BaslerROS2Driver::_baslerColorHdCb()
-    {
-        if (_color_handler != nullptr)
-        {
-            auto hd_color_image_temp = _color_handler->getHDColorImage();
-            if (hd_color_image_temp.size().width > 0)
-            {
-                auto hd_color_image_msg = std::make_shared<sensor_msgs::msg::Image>();
-                hd_color_image_msg->header.frame_id = "/basler/color/image_raw";
-                hd_color_image_msg->header.stamp = builtin_interfaces::msg::Time(this->now());
-                cv_bridge::CvImagePtr cv_ptr = std::make_shared<cv_bridge::CvImage>(hd_color_image_msg->header, sensor_msgs::image_encodings::BGR8, hd_color_image_temp);
-                try
-                {
-                    hd_color_image_msg = cv_ptr->toImageMsg();
-                }
-                catch (cv_bridge::Exception &e)
-                {
-                    RCLCPP_ERROR(this->get_logger(), e.what());
-                    return;
-                }
-                if (_bgr_color_publisher->get_subscription_count() > 0 && hd_color_image_msg->width > 0)
-                {
-                    _bgr_color_publisher->publish(*hd_color_image_msg);
-                }
-            }
-        }
-    }
+    // void BaslerROS2Driver::_baslerColorHdCb()
+    // {
+    //     if (_color_handler != nullptr)
+    //     {
+    //         auto hd_color_image_temp = _color_handler->getHDColorImage();
+    //         if (hd_color_image_temp.size().width > 0)
+    //         {
+    //             auto hd_color_image_msg = std::make_shared<sensor_msgs::msg::Image>();
+    //             hd_color_image_msg->header.frame_id = "/basler/color/image_raw";
+    //             hd_color_image_msg->header.stamp = builtin_interfaces::msg::Time(this->now());
+    //             cv_bridge::CvImagePtr cv_ptr = std::make_shared<cv_bridge::CvImage>(hd_color_image_msg->header, sensor_msgs::image_encodings::BGR8, hd_color_image_temp);
+    //             try
+    //             {
+    //                 hd_color_image_msg = cv_ptr->toImageMsg();
+    //             }
+    //             catch (cv_bridge::Exception &e)
+    //             {
+    //                 RCLCPP_ERROR(this->get_logger(), e.what());
+    //                 return;
+    //             }
+    //             if (_bgr_color_publisher->get_subscription_count() > 0 && hd_color_image_msg->width > 0)
+    //             {
+    //                 _bgr_color_publisher->publish(*hd_color_image_msg);
+    //             }
+    //         }
+    //     }
+    // }
     void BaslerROS2Driver::_getAllImagesCb(const std::shared_ptr<GetAllImages::Request> /*request*/,
                                            std::shared_ptr<GetAllImages::Response> response)
     {
