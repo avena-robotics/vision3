@@ -20,8 +20,8 @@ namespace basler
         cv::Mat getHDColorImage() const;
 
     private:
-        cv::Mat _color_4k_image,_color_hd_image;
-        mutable std::mutex _hd_color_mutex,_4k_color_mutex;
+        cv::Mat _color_4k_image, _color_hd_image;
+        mutable std::mutex _hd_color_mutex, _4k_color_mutex;
         // mutable std::shared_mutex _hd_color_mutex,_4k_color_mutex;
     };
     class LeftMonoImageEventHandler : public Pylon::CImageEventHandler
@@ -30,7 +30,7 @@ namespace basler
         LeftMonoImageEventHandler() = default;
         LeftMonoImageEventHandler(const LeftMonoImageEventHandler &) = delete;
         LeftMonoImageEventHandler &operator=(const LeftMonoImageEventHandler &) = delete;
-        virtual ~LeftMonoImageEventHandler() {std::cout << "somebody called descrutor\n";};
+        virtual ~LeftMonoImageEventHandler() = default;
         void OnImageGrabbed(Pylon::CInstantCamera &camera, const Pylon::CGrabResultPtr &grabResult) override;
         cv::Mat getLeftMonoImage() const;
 

@@ -93,12 +93,19 @@ namespace basler
 
         // _PYLON_
         std::shared_ptr<Pylon::CInstantCameraArray> _avena_basler_cameras;
-        std::shared_ptr<ColorImageEventHandler> _color_handler;
-        std::shared_ptr<LeftMonoImageEventHandler> _left_mono_handler;
-        std::shared_ptr<RightMonoEventHandler> _right_mono_handler;
-        std::shared_ptr<MonoCameraConfigurationHandler> _left_mono_config_handler;
-        std::shared_ptr<MonoCameraConfigurationHandler> _right_mono_config_handler;
-        std::shared_ptr<ColorCameraConfigurationHandler> _color_config_handler;
+        // std::shared_ptr<ColorImageEventHandler> _color_handler;
+        // std::shared_ptr<LeftMonoImageEventHandler> _left_mono_handler;
+        // std::shared_ptr<RightMonoEventHandler> _right_mono_handler;
+        // std::shared_ptr<MonoCameraConfigurationHandler> _left_mono_config_handler;
+        // std::shared_ptr<MonoCameraConfigurationHandler> _right_mono_config_handler;
+        // std::shared_ptr<ColorCameraConfigurationHandler> _color_config_handler;
+
+        ColorImageEventHandler* _color_handler;
+        LeftMonoImageEventHandler* _left_mono_handler;
+        RightMonoEventHandler* _right_mono_handler;
+        MonoCameraConfigurationHandler* _left_mono_config_handler;
+        MonoCameraConfigurationHandler* _right_mono_config_handler;
+        ColorCameraConfigurationHandler* _color_config_handler;
 
         // __PRIVATE Member Functions__
         // _AVENA_

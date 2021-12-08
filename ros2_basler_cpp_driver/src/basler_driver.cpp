@@ -16,37 +16,28 @@ namespace basler
     BaslerROS2Driver::~BaslerROS2Driver()
     {
 
-        // if (_avena_basler_cameras != nullptr && _avena_basler_cameras->GetSize() > 0)
-        // {
-        //     _closeBaslerCameras();
-        // }
+        if (_avena_basler_cameras != nullptr && (_avena_basler_cameras->IsOpen() ||_avena_basler_cameras->IsGrabbing()) )
+        {
+            _closeBaslerCameras();
+        }
         // else
         // {
         //     RCLCPP_WARN(this->get_logger(), "cameras are already closed or not open");
         // }
-        // for (size_t camera_idx = 0; camera_idx < _avena_basler_cameras->GetSize(); camera_idx++)
-        // {
-        //     auto device_serial = std::string((*_avena_basler_cameras)[camera_idx].GetDeviceInfo().GetSerialNumber());
-        //     if (_camera_group_serials.find(device_serial) != _camera_group_serials.end())
-        //     {
-        //         if (_camera_group_serials.at(device_serial) == "color")
-        //         {
-        //             // (*_avena_basler_cameras)[camera_idx].DeregisterImageEventHandler(dynamic_cast<Pylon::CImageEventHandler *>(_color_handler.get()));
-        //             (*_avena_basler_cameras)[camera_idx].DeregisterConfiguration(dynamic_cast<Pylon::CConfigurationEventHandler *>(_color_config_handler.get()));
-        //         }
-        //         else if (_camera_group_serials.at(device_serial) == "left_mono")
-        //         {
-        //             // (*_avena_basler_cameras)[camera_idx].DeregisterImageEventHandler(dynamic_cast<Pylon::CImageEventHandler *>(_left_mono_handler.get()));
-        //             (*_avena_basler_cameras)[camera_idx].DeregisterConfiguration(dynamic_cast<Pylon::CConfigurationEventHandler *>(_left_mono_config_handler.get()));
-        //         }
-        //         else if (_camera_group_serials.at(device_serial) == "right_mono")
-        //         {
-        //             // (*_avena_basler_cameras)[camera_idx].DeregisterImageEventHandler(dynamic_cast<Pylon::CImageEventHandler *>(_right_mono_handler.get()));
-        //             (*_avena_basler_cameras)[camera_idx].DeregisterConfiguration(dynamic_cast<Pylon::CConfigurationEventHandler *>(_right_mono_config_handler.get()));
-        //         }
-        //     }
-        // }
-        Pylon::PylonTerminate();
+
+        // _color_handler.reset();
+        // _left_mono_handler.reset();
+        // _right_mono_handler.reset();
+        // _color_config_handler.reset();
+        // _left_mono_config_handler.reset();
+        // _right_mono_config_handler.reset();
+        // delete _color_handler;
+        // delete _left_mono_handler;
+        // delete _right_mono_handler;
+        // delete _color_config_handler;
+        // delete _left_mono_config_handler;
+        // delete _right_mono_config_handler;
+        // Pylon::PylonTerminate();
         rclcpp::shutdown();
     }
 
@@ -82,24 +73,36 @@ namespace basler
                         RCLCPP_INFO_STREAM(this->get_logger(), camera_group_serials.at(device_serial) << " camera serial number: " << device_serial);
                         if (camera_group_serials.at(device_serial) == "color")
                         {
-                            _color_handler = std::make_shared<ColorImageEventHandler>();
-                            _color_config_handler = std::make_shared<ColorCameraConfigurationHandler>();
-                            (*_avena_basler_cameras)[camera_idx].RegisterImageEventHandler(dynamic_cast<Pylon::CImageEventHandler *>(_color_handler.get()), Pylon::RegistrationMode_Append, Pylon::Cleanup_Delete);
-                            (*_avena_basler_cameras)[camera_idx].RegisterConfiguration(dynamic_cast<Pylon::CConfigurationEventHandler *>(_color_config_handler.get()), Pylon::RegistrationMode_Append, Pylon::Cleanup_Delete);
+                            // _color_handler = std::make_shared<ColorImageEventHandler>();
+                            _color_handler = new ColorImageEventHandler();
+                            // _color_config_handler = std::make_shared<ColorCameraConfigurationHandler>();
+                            _color_config_handler = new ColorCameraConfigurationHandler();
+                            (*_avena_basler_cameras)[camera_idx].RegisterImageEventHandler(_color_handler, Pylon::RegistrationMode_Append, Pylon::Cleanup_Delete);
+                            // (*_avena_basler_cameras)[camera_idx].RegisterImageEventHandler(dynamic_cast<Pylon::CImageEventHandler *>(_color_handler.get()), Pylon::RegistrationMode_Append, Pylon::Cleanup_Delete);
+                            (*_avena_basler_cameras)[camera_idx].RegisterConfiguration(_color_config_handler, Pylon::RegistrationMode_Append, Pylon::Cleanup_Delete);
+                            // (*_avena_basler_cameras)[camera_idx].RegisterConfiguration(dynamic_cast<Pylon::CConfigurationEventHandler *>(_color_config_handler.get()), Pylon::RegistrationMode_Append, Pylon::Cleanup_Delete);
                         }
                         else if (camera_group_serials.at(device_serial) == "left_mono")
                         {
-                            _left_mono_handler = std::make_shared<LeftMonoImageEventHandler>();
-                            _left_mono_config_handler = std::make_shared<MonoCameraConfigurationHandler>();
-                            (*_avena_basler_cameras)[camera_idx].RegisterImageEventHandler(dynamic_cast<Pylon::CImageEventHandler *>(_left_mono_handler.get()), Pylon::RegistrationMode_Append, Pylon::Cleanup_Delete);
-                            (*_avena_basler_cameras)[camera_idx].RegisterConfiguration(dynamic_cast<Pylon::CConfigurationEventHandler *>(_left_mono_config_handler.get()), Pylon::RegistrationMode_Append, Pylon::Cleanup_Delete);
+                            _left_mono_handler = new LeftMonoImageEventHandler();
+                            // _left_mono_handler = std::make_shared<LeftMonoImageEventHandler>();
+                            _left_mono_config_handler = new MonoCameraConfigurationHandler();
+                            // _left_mono_config_handler = std::make_shared<MonoCameraConfigurationHandler>();
+                            // (*_avena_basler_cameras)[camera_idx].RegisterImageEventHandler(dynamic_cast<Pylon::CImageEventHandler *>(_left_mono_handler.get()), Pylon::RegistrationMode_Append, Pylon::Cleanup_Delete);
+                            (*_avena_basler_cameras)[camera_idx].RegisterImageEventHandler(_left_mono_handler, Pylon::RegistrationMode_Append, Pylon::Cleanup_Delete);
+                            // (*_avena_basler_cameras)[camera_idx].RegisterConfiguration(dynamic_cast<Pylon::CConfigurationEventHandler *>(_left_mono_config_handler.get()), Pylon::RegistrationMode_Append, Pylon::Cleanup_Delete);
+                            (*_avena_basler_cameras)[camera_idx].RegisterConfiguration(_left_mono_config_handler, Pylon::RegistrationMode_Append, Pylon::Cleanup_Delete);
                         }
                         else if (camera_group_serials.at(device_serial) == "right_mono")
                         {
-                            _right_mono_handler = std::make_shared<RightMonoEventHandler>();
-                            _right_mono_config_handler = std::make_shared<MonoCameraConfigurationHandler>();
-                            (*_avena_basler_cameras)[camera_idx].RegisterImageEventHandler(dynamic_cast<Pylon::CImageEventHandler *>(_right_mono_handler.get()), Pylon::RegistrationMode_Append, Pylon::Cleanup_Delete);
-                            (*_avena_basler_cameras)[camera_idx].RegisterConfiguration(dynamic_cast<Pylon::CConfigurationEventHandler *>(_right_mono_config_handler.get()), Pylon::RegistrationMode_Append, Pylon::Cleanup_Delete);
+                            _right_mono_handler = new RightMonoEventHandler();
+                            // _right_mono_handler = std::make_shared<RightMonoEventHandler>();
+                            _right_mono_config_handler = new MonoCameraConfigurationHandler();
+                            // _right_mono_config_handler = std::make_shared<MonoCameraConfigurationHandler>();
+                            (*_avena_basler_cameras)[camera_idx].RegisterImageEventHandler(_right_mono_handler, Pylon::RegistrationMode_Append, Pylon::Cleanup_Delete);
+                            // (*_avena_basler_cameras)[camera_idx].RegisterImageEventHandler(dynamic_cast<Pylon::CImageEventHandler *>(_right_mono_handler.get()), Pylon::RegistrationMode_Append, Pylon::Cleanup_Delete);
+                            (*_avena_basler_cameras)[camera_idx].RegisterConfiguration(_right_mono_config_handler, Pylon::RegistrationMode_Append, Pylon::Cleanup_Delete);
+                            // (*_avena_basler_cameras)[camera_idx].RegisterConfiguration(dynamic_cast<Pylon::CConfigurationEventHandler *>(_right_mono_config_handler.get()), Pylon::RegistrationMode_Append, Pylon::Cleanup_Delete);
                         }
                     }
                     else
@@ -181,6 +184,54 @@ namespace basler
         {
             _avena_basler_cameras->StopGrabbing();
         }
+        else if (_avena_basler_cameras->IsOpen())
+        {
+            _avena_basler_cameras->Close();
+        }
+        
+        for (size_t camera_idx = 0; camera_idx < _avena_basler_cameras->GetSize(); camera_idx++)
+        {
+
+            auto device_serial = std::string((*_avena_basler_cameras)[camera_idx].GetDeviceInfo().GetSerialNumber());
+            if (_camera_group_serials.find(device_serial) != _camera_group_serials.end())
+            {
+
+                if (_camera_group_serials.at(device_serial) == "color")
+                {
+
+                    if (_color_handler != nullptr && _color_config_handler != nullptr)
+                    {
+                        // (*_avena_basler_cameras)[camera_idx].DeregisterImageEventHandler(dynamic_cast<Pylon::CImageEventHandler *>(_color_handler.get()));
+                        (*_avena_basler_cameras)[camera_idx].DeregisterImageEventHandler(_color_handler);
+                        (*_avena_basler_cameras)[camera_idx].DeregisterConfiguration(_color_config_handler);
+                        // (*_avena_basler_cameras)[camera_idx].DeregisterConfiguration(dynamic_cast<Pylon::CConfigurationEventHandler *>(_color_config_handler.get()));
+                    }
+                }
+                else if (_camera_group_serials.at(device_serial) == "left_mono")
+                {
+
+                    if (_left_mono_handler != nullptr && _left_mono_config_handler != nullptr)
+                    {
+
+                        // (*_avena_basler_cameras)[camera_idx].DeregisterImageEventHandler(dynamic_cast<Pylon::CImageEventHandler *>(_left_mono_handler.get()));
+                        (*_avena_basler_cameras)[camera_idx].DeregisterImageEventHandler(_left_mono_handler);
+                        (*_avena_basler_cameras)[camera_idx].DeregisterConfiguration(_left_mono_config_handler);
+                        // (*_avena_basler_cameras)[camera_idx].DeregisterConfiguration(dynamic_cast<Pylon::CConfigurationEventHandler *>(_left_mono_config_handler.get()));
+                    }
+                }
+                else if (_camera_group_serials.at(device_serial) == "right_mono")
+                {
+
+                    if (_right_mono_handler != nullptr && _right_mono_config_handler != nullptr)
+                    {
+                        // (*_avena_basler_cameras)[camera_idx].DeregisterImageEventHandler(dynamic_cast<Pylon::CImageEventHandler *>(_right_mono_handler.get()));
+                        (*_avena_basler_cameras)[camera_idx].DeregisterImageEventHandler(_right_mono_handler);
+                        (*_avena_basler_cameras)[camera_idx].DeregisterConfiguration(_right_mono_config_handler);
+                        // (*_avena_basler_cameras)[camera_idx].DeregisterConfiguration(dynamic_cast<Pylon::CConfigurationEventHandler *>(_right_mono_config_handler.get()));
+                    }
+                }
+            }
+        }
         // RCLCPP_INFO(this->get_logger(), "before cameras are closed");
         // _avena_basler_cameras->Close(); // close calls stop grabbing
         // RCLCPP_INFO(this->get_logger(), "after cameras are closed");
@@ -195,6 +246,7 @@ namespace basler
         // _right_mono_config_handler.reset();
         // _timer->cancel();
         // _avena_basler_cameras.reset();
+
         RCLCPP_INFO(this->get_logger(), "cameras are closed");
     }
     void BaslerROS2Driver::_closeBaslerCamerasCb(const std::shared_ptr<Trigger::Request> /*request*/,
