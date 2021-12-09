@@ -88,6 +88,7 @@ public:
                 Pylon::CFloatParameter(cam_nodemap, "AutoTargetBrightness").SetValue(basler_color_brightness);
 
             Pylon::CEnumParameter(cam_nodemap, "PixelFormat").SetValue("BGR8");
+            // Pylon::CEnumParameter(cam_nodemap, "PixelFormat").SetValue("Mono8");
         }
         catch (const Pylon::GenericException &e)
         {

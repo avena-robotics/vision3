@@ -328,7 +328,7 @@ namespace basler
                 color_header.stamp = now;
                 cv_bridge::CvImagePtr left_cv_ptr = std::make_shared<cv_bridge::CvImage>(left_header, sensor_msgs::image_encodings::MONO8, left_mono_image);
                 cv_bridge::CvImagePtr right_cv_ptr = std::make_shared<cv_bridge::CvImage>(right_header, sensor_msgs::image_encodings::MONO8, right_mono_image);
-                cv_bridge::CvImagePtr color_cv_ptr = std::make_shared<cv_bridge::CvImage>(color_header, sensor_msgs::image_encodings::BGR8, color_4k_image);
+                cv_bridge::CvImagePtr color_cv_ptr = std::make_shared<cv_bridge::CvImage>(color_header, sensor_msgs::image_encodings::RGB8, color_4k_image);
 
                 try
                 {
@@ -363,7 +363,7 @@ namespace basler
                 auto header = std_msgs::msg::Header();
                 header.frame_id = "/basler/color/image_raw";
                 header.stamp = builtin_interfaces::msg::Time(this->now());
-                cv_bridge::CvImagePtr cv_ptr = std::make_shared<cv_bridge::CvImage>(header, sensor_msgs::image_encodings::BGR8, color_4k_image);
+                cv_bridge::CvImagePtr cv_ptr = std::make_shared<cv_bridge::CvImage>(header, sensor_msgs::image_encodings::RGB8, color_4k_image);
                 try
                 {
                     response->color = *(cv_ptr->toImageMsg());

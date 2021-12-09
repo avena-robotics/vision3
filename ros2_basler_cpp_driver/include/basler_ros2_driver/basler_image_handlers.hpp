@@ -34,7 +34,6 @@ namespace basler
         virtual ~ColorImageEventHandler() = default;
         void OnImageGrabbed(Pylon::CInstantCamera &camera, const Pylon::CGrabResultPtr &grabResult) override;
         cv::Mat get4kColorImage() const;
-        // cv::Mat getHDColorImage() const;
 
     private:
         cv::Mat _color_4k_image, _color_hd_image;
@@ -44,12 +43,13 @@ namespace basler
         // _ROS_
         // publishers
         rclcpp::Publisher<Image>::SharedPtr _bgr_color_publisher;
-        std::chrono::time_point<std::chrono::system_clock> _color_prev_time;
+        // std::chrono::time_point<std::chrono::system_clock> _color_prev_time;
+        // Pylon::CImageFormatConverter _image_converter;
     };
     class LeftMonoImageEventHandler : public Pylon::CImageEventHandler
     {
     public:
-        LeftMonoImageEventHandler();
+        LeftMonoImageEventHandler() = default;
         LeftMonoImageEventHandler(const LeftMonoImageEventHandler &) = delete;
         LeftMonoImageEventHandler &operator=(const LeftMonoImageEventHandler &) = delete;
         virtual ~LeftMonoImageEventHandler() = default;
@@ -59,13 +59,12 @@ namespace basler
     private:
         cv::Mat _left_mono_image;
         mutable std::mutex _left_mono_mutex;
-        std::chrono::time_point<std::chrono::system_clock> _left_mono_prev_time;
         // mutable std::shared_mutex _left_mono_mutex;
     };
     class RightMonoEventHandler : public Pylon::CImageEventHandler
     {
     public:
-        RightMonoEventHandler();
+        RightMonoEventHandler() = default;
         RightMonoEventHandler(const RightMonoEventHandler &) = delete;
         RightMonoEventHandler &operator=(const RightMonoEventHandler &) = delete;
         virtual ~RightMonoEventHandler() = default;
@@ -77,7 +76,6 @@ namespace basler
         mutable std::mutex _right_mono_mutex;
         // mutable std::shared_mutex _right_mono_mutex;
         std::chrono::time_point<std::chrono::system_clock> _right_mono_prev_time;
-
     };
 } // namespace basler
 

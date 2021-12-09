@@ -3,7 +3,11 @@
 
 namespace basler
 {
-    ColorImageEventHandler::ColorImageEventHandler(const rclcpp::Publisher<Image>::SharedPtr &hd_image_publihser) : _bgr_color_publisher(hd_image_publihser), _color_prev_time(std::chrono::system_clock::now()) {}
+    // ColorImageEventHandler::ColorImageEventHandler(const rclcpp::Publisher<Image>::SharedPtr &hd_image_publihser) : _bgr_color_publisher(hd_image_publihser), _color_prev_time(std::chrono::system_clock::now())
+    ColorImageEventHandler::ColorImageEventHandler(const rclcpp::Publisher<Image>::SharedPtr &hd_image_publihser) : _bgr_color_publisher(hd_image_publihser)
+    {
+        // _image_converter.OutputPixelFormat = Pylon::PixelType_RGB8packed;
+    }
     cv::Mat ColorImageEventHandler::get4kColorImage() const
     {
         // std::shared_lock lock(_4k_color_mutex);
@@ -27,7 +31,11 @@ namespace basler
         {
             if (grabResult->GrabSucceeded())
             {
+                // Pylon::CPylonImage color_image;
+                // _image_converter.Convert(color_image, grabResult);
+                // auto color_image_buffer = reinterpret_cast<uint8_t *>(color_image.GetBuffer());
                 auto color_4k_image = cv::Mat(grabResult->GetHeight(), grabResult->GetWidth(), CV_8UC3, reinterpret_cast<uint8_t *>(grabResult->GetBuffer()));
+                // auto color_4k_image = cv::Mat(color_image.GetHeight(), color_image.GetWidth(), CV_8UC3, color_image_buffer);
                 {
                     // std::unique_lock lock(_4k_color_mutex);
                     std::lock_guard lock(_4k_color_mutex);
@@ -86,7 +94,6 @@ namespace basler
             std::cerr << e.what() << '\n';
         }
     }
-    LeftMonoImageEventHandler::LeftMonoImageEventHandler() : _left_mono_prev_time(std::chrono::system_clock::now()) {}
     cv::Mat LeftMonoImageEventHandler::getLeftMonoImage() const
     {
         // std::shared_lock lock(_left_mono_mutex);
@@ -124,7 +131,6 @@ namespace basler
             std::cerr << e.what() << '\n';
         }
     }
-    RightMonoEventHandler::RightMonoEventHandler() : _right_mono_prev_time(std::chrono::system_clock::now()) {}
 
     cv::Mat RightMonoEventHandler::getRightMonoimage() const
     {
