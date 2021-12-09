@@ -66,7 +66,6 @@ namespace basler
         // publishers
         rclcpp::Publisher<Image>::SharedPtr _bgr_color_publisher;
         // timers
-        // rclcpp::TimerBase::SharedPtr _timer;
         // service servers
         rclcpp::Service<Trigger>::SharedPtr _open_basler_cameras_server;
         rclcpp::Service<Trigger>::SharedPtr _close_basler_cameras_server;
@@ -77,9 +76,6 @@ namespace basler
             {"40134758", "right_" + _mono_id},
             {"40099899", _color_id}};
 
-        // const uint8_t _basler_binning = 1;
-        // const float _basler_color_brightness = 0.2;
-        // const float _basler_mono_brightness = 0.15;
         const float _hd_color_fps = 1.0 / 37.0;
         const std::string _mono_postfix = "um";
         const std::string _color_postfix = "uc";
@@ -87,12 +83,6 @@ namespace basler
 
         // _PYLON_
         std::shared_ptr<Pylon::CInstantCameraArray> _avena_basler_cameras;
-        // std::shared_ptr<ColorImageEventHandler> _color_handler;
-        // std::shared_ptr<LeftMonoImageEventHandler> _left_mono_handler;
-        // std::shared_ptr<RightMonoEventHandler> _right_mono_handler;
-        // std::shared_ptr<MonoCameraConfigurationHandler> _left_mono_config_handler;
-        // std::shared_ptr<MonoCameraConfigurationHandler> _right_mono_config_handler;
-        // std::shared_ptr<ColorCameraConfigurationHandler> _color_config_handler;
 
         ColorImageEventHandler* _color_handler;
         LeftMonoImageEventHandler* _left_mono_handler;
@@ -127,7 +117,6 @@ namespace basler
         // _PYLON_
         // _JSON_
     };
-    // void _signalHandler(int signum);
 
 } // namespace basler
 

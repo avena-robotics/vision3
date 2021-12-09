@@ -37,14 +37,10 @@ namespace basler
 
     private:
         cv::Mat _color_4k_image, _color_hd_image;
-        // mutable std::mutex _hd_color_mutex, _4k_color_mutex;
         mutable std::mutex _4k_color_mutex;
-        // mutable std::shared_mutex _hd_color_mutex,_4k_color_mutex;
         // _ROS_
         // publishers
         rclcpp::Publisher<Image>::SharedPtr _bgr_color_publisher;
-        // std::chrono::time_point<std::chrono::system_clock> _color_prev_time;
-        // Pylon::CImageFormatConverter _image_converter;
     };
     class LeftMonoImageEventHandler : public Pylon::CImageEventHandler
     {
@@ -59,7 +55,6 @@ namespace basler
     private:
         cv::Mat _left_mono_image;
         mutable std::mutex _left_mono_mutex;
-        // mutable std::shared_mutex _left_mono_mutex;
     };
     class RightMonoEventHandler : public Pylon::CImageEventHandler
     {
@@ -74,8 +69,6 @@ namespace basler
     private:
         cv::Mat _right_mono_image;
         mutable std::mutex _right_mono_mutex;
-        // mutable std::shared_mutex _right_mono_mutex;
-        std::chrono::time_point<std::chrono::system_clock> _right_mono_prev_time;
     };
 } // namespace basler
 

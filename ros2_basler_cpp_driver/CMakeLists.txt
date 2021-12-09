@@ -4,8 +4,7 @@ project(basler_ros2_driver)
 
 # Default to C++17
 set(CMAKE_CXX_STANDARD 17)
-# set(CMAKE_BUILD_TYPE RELEASE)
-set(CMAKE_BUILD_TYPE DEBUG)
+set(CMAKE_BUILD_TYPE RELEASE)
 add_compile_options(-Wall -Wextra -Wpedantic)
 
 # find dependencies
@@ -15,7 +14,7 @@ find_package(rclcpp_components REQUIRED)
 find_package(custom_interfaces REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(sensor_msgs REQUIRED)
-include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindPylon.cmake") # find_package(Pylon REQUIRED)
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/FindPylon.cmake")
 find_package(OpenCV REQUIRED )
 find_package(ament_index_cpp REQUIRED)
 find_package(nlohmann_json REQUIRED)
