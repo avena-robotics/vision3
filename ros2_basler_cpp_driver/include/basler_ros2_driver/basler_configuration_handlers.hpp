@@ -17,7 +17,7 @@ public:
             auto width = Pylon::CIntegerParameter(cam_nodemap, "Width").GetValue();
             auto height = Pylon::CIntegerParameter(cam_nodemap, "Height").GetValue();
 
-            Pylon::CIntegerParameter(cam_nodemap, "DeviceLinkThroughputLimit").SetValue(419430400);
+            Pylon::CIntegerParameter(cam_nodemap, "DeviceLinkThroughputLimit").SetValue(320000000);
             Pylon::CEnumParameter(cam_nodemap, "AutoFunctionROISelector").SetValue("ROI1");
             Pylon::CIntegerParameter(cam_nodemap, "AutoFunctionROIOffsetX").SetValue(0);
             Pylon::CIntegerParameter(cam_nodemap, "AutoFunctionROIOffsetY").SetValue(0);
@@ -70,7 +70,7 @@ public:
             auto width = Pylon::CIntegerParameter(cam_nodemap, "Width").GetValue();
             auto height = Pylon::CIntegerParameter(cam_nodemap, "Height").GetValue();
 
-            Pylon::CIntegerParameter(cam_nodemap, "DeviceLinkThroughputLimit").SetValue(419430400); 
+            Pylon::CIntegerParameter(cam_nodemap, "DeviceLinkThroughputLimit").SetValue(419430400);
             Pylon::CEnumParameter(cam_nodemap, "AutoFunctionROISelector").SetValue("ROI1");
             Pylon::CIntegerParameter(cam_nodemap, "AutoFunctionROIOffsetX").SetValue(0);
             Pylon::CIntegerParameter(cam_nodemap, "AutoFunctionROIOffsetY").SetValue(0);
@@ -87,8 +87,8 @@ public:
             if (Pylon::CFloatParameter(cam_nodemap, "AutoTargetBrightness").GetValue() != basler_color_brightness)
                 Pylon::CFloatParameter(cam_nodemap, "AutoTargetBrightness").SetValue(basler_color_brightness);
 
-            Pylon::CEnumParameter(cam_nodemap, "PixelFormat").SetValue("BGR8");
-            // Pylon::CEnumParameter(cam_nodemap, "PixelFormat").SetValue("Mono8");
+            if (Pylon::CEnumParameter(cam_nodemap, "PixelFormat").GetValue() != "BGR8")
+                Pylon::CEnumParameter(cam_nodemap, "PixelFormat").SetValue("BGR8");
         }
         catch (const Pylon::GenericException &e)
         {
