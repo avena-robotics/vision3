@@ -17,7 +17,7 @@ public:
             auto width = Pylon::CIntegerParameter(cam_nodemap, "Width").GetValue();
             auto height = Pylon::CIntegerParameter(cam_nodemap, "Height").GetValue();
 
-            Pylon::CIntegerParameter(cam_nodemap, "DeviceLinkThroughputLimit").SetValue(320000000); // TODO: 45 fps
+            Pylon::CIntegerParameter(cam_nodemap, "DeviceLinkThroughputLimit").SetValue(419430400);
             Pylon::CEnumParameter(cam_nodemap, "AutoFunctionROISelector").SetValue("ROI1");
             Pylon::CIntegerParameter(cam_nodemap, "AutoFunctionROIOffsetX").SetValue(0);
             Pylon::CIntegerParameter(cam_nodemap, "AutoFunctionROIOffsetY").SetValue(0);
@@ -70,7 +70,7 @@ public:
             auto width = Pylon::CIntegerParameter(cam_nodemap, "Width").GetValue();
             auto height = Pylon::CIntegerParameter(cam_nodemap, "Height").GetValue();
 
-            Pylon::CIntegerParameter(cam_nodemap, "DeviceLinkThroughputLimit").SetValue(320000000); // TODO: 45 fps
+            Pylon::CIntegerParameter(cam_nodemap, "DeviceLinkThroughputLimit").SetValue(419430400); 
             Pylon::CEnumParameter(cam_nodemap, "AutoFunctionROISelector").SetValue("ROI1");
             Pylon::CIntegerParameter(cam_nodemap, "AutoFunctionROIOffsetX").SetValue(0);
             Pylon::CIntegerParameter(cam_nodemap, "AutoFunctionROIOffsetY").SetValue(0);
