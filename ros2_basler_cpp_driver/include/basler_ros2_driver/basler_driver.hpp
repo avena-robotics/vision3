@@ -3,7 +3,6 @@
 
 // __HEADERs__
 
-
 #include <std_srvs/srv/trigger.hpp>
 #include <sensor_msgs/image_encodings.hpp>
 #include <ament_index_cpp/get_package_share_directory.hpp>
@@ -42,26 +41,64 @@ namespace basler
     using Trigger = std_srvs::srv::Trigger;
 
     // __Classes__
+    /**
+     * @class 
+     * 
+     * @brief  represents ROS2 node for basler driver
+     *
+     *
+     */
     class BaslerROS2Driver : public rclcpp::Node
     {
     public:
         // __PUBLIC Member Functions__
 
         // _AVENA_
+        /**
+         * @brief Construct a new Basler R O S 2 Driver object
+         *
+         * @param options
+         */
         BaslerROS2Driver(const rclcpp::NodeOptions &options);
+        /**
+         * @brief Construct a new Basler ROS2 Driver object
+         *
+         */
         BaslerROS2Driver(const BaslerROS2Driver &) = delete;
+        /**
+         * @brief Construct a new Basler ROS2 Driver object
+         *
+         */
         BaslerROS2Driver() = delete;
+        /**
+         * @brief
+         *
+         * @return BaslerROS2Driver&
+         */
         BaslerROS2Driver &operator=(const BaslerROS2Driver &) = delete;
+        /**
+         * @brief Destroy the Basler ROS2 Driver object
+         *
+         */
         virtual ~BaslerROS2Driver();
 
     private:
         // __ PRIVATE Member VARIABLES__
 
-        // _AVENA_
-        // service servers
+        /**
+         * @{ \name ROS2 service servers
+         */
+        /**
+         * \brief ROS2 service servers.
+         *
+         * These .
+         */
         rclcpp::Service<GetAllImages>::SharedPtr _get_all_images_server;
         rclcpp::Service<GetColorImage>::SharedPtr _get_color_image_server;
         rclcpp::Service<GetMonoImages>::SharedPtr _get_mono_images_server;
+        /**
+         * @}
+         */
         // _ROS_
         // publishers
         rclcpp::Publisher<Image>::SharedPtr _bgr_color_publisher;
@@ -69,13 +106,22 @@ namespace basler
         // service servers
         rclcpp::Service<Trigger>::SharedPtr _open_basler_cameras_server;
         rclcpp::Service<Trigger>::SharedPtr _close_basler_cameras_server;
-        // _CPP_
+        /**
+         * @{ \name CPP Constants
+         */
+        /**
+         * \brief CPP Constants
+         *
+         * These .
+         */
         const std::string _color_id{"color"}, _mono_id{"mono"};
         CamName_CamSerial _camera_group_serials{
             {"40093166", "left_" + _mono_id},
             {"40134758", "right_" + _mono_id},
             {"40099899", _color_id}};
-
+        /**
+         * @}
+         */
         const float _hd_color_fps = 1.0 / 37.0;
         const std::string _mono_postfix = "um";
         const std::string _color_postfix = "uc";
@@ -84,36 +130,69 @@ namespace basler
         // _PYLON_
         std::shared_ptr<Pylon::CInstantCameraArray> _avena_basler_cameras;
 
-        ColorImageEventHandler* _color_handler;
-        LeftMonoImageEventHandler* _left_mono_handler;
-        RightMonoEventHandler* _right_mono_handler;
-        MonoCameraConfigurationHandler* _left_mono_config_handler;
-        MonoCameraConfigurationHandler* _right_mono_config_handler;
-        ColorCameraConfigurationHandler* _color_config_handler;
+        ColorImageEventHandler *_color_handler;
+        LeftMonoImageEventHandler *_left_mono_handler;
+        RightMonoEventHandler *_right_mono_handler;
+        MonoCameraConfigurationHandler *_left_mono_config_handler;
+        MonoCameraConfigurationHandler *_right_mono_config_handler;
+        ColorCameraConfigurationHandler *_color_config_handler;
 
         // __PRIVATE Member Functions__
         // _AVENA_
+        /**
+         * @brief open basler camera array
+         *
+         * @param[in] camera_group_serials  basler usb3 cameras to stream for ros services and topics
+         * For Example: {{"40093166", "left_mono" }, {"40134758", "right_mono"}, {"40099899", "color"}}
+         */
         void _openBaslerCameras(const CamName_CamSerial &camera_group_serials);
         /**
-         * @brief closes open camera array
-         * @param[in] basler_cameras Array of basler cameras to close
-         * \return Error code for success or failure of closing camera devices
+         * @brief closes active basler camera array
+         * \return none
          */
         void _closeBaslerCameras();
-
+        /**
+         * @brief
+         *
+         * @param[in] request
+         * @param[out] response
+         */
         void _getAllImagesCb(const std::shared_ptr<GetAllImages::Request> request,
                              std::shared_ptr<GetAllImages::Response> response);
+        /**
+         * @brief
+         *
+         * @param[in] request
+         * @param[out] response
+         */
         void _getColorImageCb(const std::shared_ptr<GetColorImage::Request> request,
                               std::shared_ptr<GetColorImage::Response> response);
+        /**
+         * @brief
+         *
+         * @param[in] request
+         * @param[out] response
+         */
         void _getMonoImagesCb(const std::shared_ptr<GetMonoImages::Request> request,
                               std::shared_ptr<GetMonoImages::Response> response);
         // _CPP_
         // _ROS_
+        /**
+         * @brief
+         *
+         * @param[in] request
+         * @param[out] response
+         */
         void _openBaslerCamerasCb(const std::shared_ptr<Trigger::Request> request,
                                   std::shared_ptr<Trigger::Response> response);
+        /**
+         * @brief
+         *
+         * @param[in] request
+         * @param[out] response
+         */
         void _closeBaslerCamerasCb(const std::shared_ptr<Trigger::Request> request,
                                    std::shared_ptr<Trigger::Response> response);
-        void _baslerColorHdCb();
         // _PYLON_
         // _JSON_
     };

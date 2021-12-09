@@ -24,15 +24,47 @@ namespace basler
 
     // _ROS_
     using Image = sensor_msgs::msg::Image;
-
+    /**
+     * @brief
+     *
+     */
     class ColorImageEventHandler : public Pylon::CImageEventHandler
     {
     public:
+        /**
+         * @brief Construct a new Color Image Event Handler object
+         *
+         * @param hd_image_publihser
+         */
         explicit ColorImageEventHandler(const rclcpp::Publisher<Image>::SharedPtr &hd_image_publihser);
+        /**
+         * @brief Construct a new Color Image Event Handler object
+         *
+         */
         ColorImageEventHandler(const ColorImageEventHandler &) = delete;
+        /**
+         * @brief
+         *
+         * @return ColorImageEventHandler&
+         */
         ColorImageEventHandler &operator=(const ColorImageEventHandler &) = delete;
+        /**
+         * @brief Destroy the Color Image Event Handler object
+         *
+         */
         virtual ~ColorImageEventHandler() = default;
+        /**
+         * @brief
+         *
+         * @param camera
+         * @param grabResult
+         */
         void OnImageGrabbed(Pylon::CInstantCamera &camera, const Pylon::CGrabResultPtr &grabResult) override;
+        /**
+         * @brief
+         *
+         * @return cv::Mat
+         */
         cv::Mat get4kColorImage() const;
 
     private:
@@ -45,25 +77,85 @@ namespace basler
     class LeftMonoImageEventHandler : public Pylon::CImageEventHandler
     {
     public:
+        /**
+         * @brief Construct a new Left Mono Image Event Handler object
+         *
+         */
         LeftMonoImageEventHandler() = default;
+        /**
+         * @brief Construct a new Left Mono Image Event Handler object
+         *
+         */
         LeftMonoImageEventHandler(const LeftMonoImageEventHandler &) = delete;
+        /**
+         * @brief
+         *
+         * @return LeftMonoImageEventHandler&
+         */
         LeftMonoImageEventHandler &operator=(const LeftMonoImageEventHandler &) = delete;
+        /**
+         * @brief Destroy the Left Mono Image Event Handler object
+         *
+         */
         virtual ~LeftMonoImageEventHandler() = default;
+        /**
+         * @brief
+         *
+         * @param camera
+         * @param grabResult
+         */
         void OnImageGrabbed(Pylon::CInstantCamera &camera, const Pylon::CGrabResultPtr &grabResult) override;
+        /**
+         * @brief Get the Left Mono Image object
+         *
+         * @return cv::Mat
+         */
         cv::Mat getLeftMonoImage() const;
 
     private:
         cv::Mat _left_mono_image;
         mutable std::mutex _left_mono_mutex;
     };
+    /**
+     * @brief
+     *
+     */
     class RightMonoEventHandler : public Pylon::CImageEventHandler
     {
     public:
+        /**
+         * @brief Construct a new Right Mono Event Handler object
+         *
+         */
         RightMonoEventHandler() = default;
+        /**
+         * @brief Construct a new Right Mono Event Handler object
+         *
+         */
         RightMonoEventHandler(const RightMonoEventHandler &) = delete;
+        /**
+         * @brief
+         *
+         * @return RightMonoEventHandler&
+         */
         RightMonoEventHandler &operator=(const RightMonoEventHandler &) = delete;
+        /**
+         * @brief Destroy the Right Mono Event Handler object
+         *
+         */
         virtual ~RightMonoEventHandler() = default;
+        /**
+         * @brief
+         *
+         * @param camera
+         * @param grabResult
+         */
         void OnImageGrabbed(Pylon::CInstantCamera &camera, const Pylon::CGrabResultPtr &grabResult) override;
+        /**
+         * @brief Get the Right Monoimage object
+         * 
+         * @return cv::Mat 
+         */
         cv::Mat getRightMonoimage() const;
 
     private:

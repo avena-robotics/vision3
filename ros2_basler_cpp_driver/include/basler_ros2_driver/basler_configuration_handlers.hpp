@@ -2,10 +2,18 @@
 #define __BASLER_CONFIGUARTION_HANDLER_HPP__
 #include <pylon/ConfigurationEventHandler.h>
 #include <pylon/ParameterIncludes.h>
-
+/**
+ * @brief
+ *
+ */
 class MonoCameraConfigurationHandler : public Pylon::CConfigurationEventHandler
 {
 public:
+    /**
+     * @brief
+     *
+     * @param camera
+     */
     void OnOpened(Pylon::CInstantCamera &camera)
     {
         try
@@ -56,9 +64,18 @@ public:
         }
     }
 };
+/**
+ * @brief
+ *
+ */
 class ColorCameraConfigurationHandler : public Pylon::CConfigurationEventHandler
 {
 public:
+    /**
+     * @brief
+     *
+     * @param camera
+     */
     void OnOpened(Pylon::CInstantCamera &camera)
     {
         try
