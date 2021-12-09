@@ -110,9 +110,17 @@ namespace basler
                         RCLCPP_WARN(this->get_logger(), "Unsupported Device connected");
                     }
                 }
-                // _avena_basler_cameras->Open();
-                _avena_basler_cameras->StartGrabbing(Pylon::GrabStrategy_LatestImageOnly, Pylon::GrabLoop_ProvidedByInstantCamera);
-                RCLCPP_INFO(this->get_logger(), "cameras are open");
+                if (_avena_basler_cameras->IsPylonDeviceAttached())
+                {
+                    _avena_basler_cameras->StartGrabbing(Pylon::GrabStrategy_LatestImageOnly, Pylon::GrabLoop_ProvidedByInstantCamera);
+                    RCLCPP_INFO(this->get_logger(), "cameras are open");
+                }
+                else
+                {
+                    RCLCPP_WARN(this->get_logger(), "cameras are not open");
+                    return ;
+                }
+                
             }
         }
         catch (const GenICam_3_1_Basler_pylon::GenericException &e)
@@ -131,7 +139,7 @@ namespace basler
             // _timer = this->create_wall_timer(
             //     std::chrono::duration<double>(_hd_color_fps), std::bind(&BaslerROS2Driver::_baslerColorHdCb, this));
             _openBaslerCameras(_camera_group_serials);
-            if (_avena_basler_cameras != nullptr || _avena_basler_cameras->IsGrabbing())
+            if (_avena_basler_cameras != nullptr && _avena_basler_cameras->IsGrabbing())
             {
                 response->success = true;
             }
@@ -300,7 +308,7 @@ namespace basler
     {
         RCLCPP_INFO(this->get_logger(), "get all images is called");
 
-        if (_left_mono_handler != nullptr && _right_mono_handler != nullptr && _color_handler != nullptr)
+        if (_left_mono_handler != nullptr && _right_mono_handler != nullptr && _color_handler != nullptr && _avena_basler_cameras != nullptr && _avena_basler_cameras->IsGrabbing())
         {
             auto left_mono_image = _left_mono_handler->getLeftMonoImage();
             auto right_mono_image = _right_mono_handler->getRightMonoimage();
@@ -335,12 +343,19 @@ namespace basler
                 }
             }
         }
+        else
+        {
+            RCLCPP_WARN(this->get_logger(), "cameras are not open, return empty response");
+            response->left_mono = Image();
+            response->right_mono = Image();
+            response->color = Image();
+        }
     }
     void BaslerROS2Driver::_getColorImageCb(const std::shared_ptr<GetColorImage::Request> /*request*/,
                                             std::shared_ptr<GetColorImage::Response> response)
     {
         RCLCPP_INFO(this->get_logger(), "get Color Image is called");
-        if (_color_handler != nullptr)
+        if (_color_handler != nullptr && _avena_basler_cameras != nullptr && _avena_basler_cameras->IsGrabbing())
         {
             auto color_4k_image = _color_handler->get4kColorImage();
             if (color_4k_image.size().width > 0)
@@ -360,12 +375,17 @@ namespace basler
                 }
             }
         }
+        else
+        {
+            RCLCPP_WARN(this->get_logger(), "cameras are not open, returning empty response");
+            response->color = Image();
+        }
     }
     void BaslerROS2Driver::_getMonoImagesCb(const std::shared_ptr<GetMonoImages::Request> /*request*/,
                                             std::shared_ptr<GetMonoImages::Response> response)
     {
         RCLCPP_INFO(this->get_logger(), "get Mono Images is called");
-        if (_left_mono_handler != nullptr && _right_mono_handler != nullptr)
+        if (_left_mono_handler != nullptr && _right_mono_handler != nullptr && _avena_basler_cameras != nullptr && _avena_basler_cameras->IsGrabbing())
         {
             auto left_mono_image = _left_mono_handler->getLeftMonoImage();
             auto right_mono_image = _right_mono_handler->getRightMonoimage();
@@ -391,6 +411,12 @@ namespace basler
                     return;
                 }
             }
+        }
+        else
+        {
+            RCLCPP_WARN(this->get_logger(), "cameras are not open, returning empty response");
+            response->left_mono = Image();
+            response->right_mono = Image();
         }
     }
 } // namespace basler
