@@ -109,34 +109,30 @@ namespace basler
         virtual ~BaslerROS2Driver();
 
     private:
-        /**
-         * @{ \name ROS2 service servers
-         */
-        /**
-         * \brief ROS2 service servers.
-         *
-         * These .
-         */
+        ///@{
+        /** Basler images servers */
         rclcpp::Service<GetAllImages>::SharedPtr _get_all_images_server;
         rclcpp::Service<GetColorImage>::SharedPtr _get_color_image_server;
         rclcpp::Service<GetMonoImages>::SharedPtr _get_mono_images_server;
+        ///@}
         /**
-         * @}
+         * @brief security color image publisher
          */
-        // _ROS_
-        // publishers
         rclcpp::Publisher<Image>::SharedPtr _bgr_color_publisher;
-        // timers
-        // service servers
+        ///@{
+        /** Basler open and close services */
         rclcpp::Service<Trigger>::SharedPtr _open_basler_cameras_server;
         rclcpp::Service<Trigger>::SharedPtr _close_basler_cameras_server;
+        ///@}
         /**
-         * Maximum number of simultaneous readers supported.
-         *
+         * @brief camera basler type ids
          * @showinitializer
          */
-
         const std::string _color_id{"color"}, _mono_id{"mono"};
+        /**
+         * @brief camera serials dart usb3 serials
+         * @showinitializer
+         */
         CamName_CamSerial _camera_group_serials{
             {"40093166", "left_" + _mono_id},
             {"40134758", "right_" + _mono_id},
@@ -148,7 +144,9 @@ namespace basler
          */
         const uint8_t _request_no_of_cameras = 3;
 
-        /// 
+        /**
+         * @brief pylon objects for cameras
+         */
         std::shared_ptr<Pylon::CInstantCameraArray> _avena_basler_cameras;
         ///@{
         /** Pylon Image and configuration Handlers */
@@ -161,7 +159,6 @@ namespace basler
         ///@}
         /**
          * @brief open basler camera array
-         *
          * @param[in] camera_group_serials  basler usb3 cameras to stream for ros services and topics
          * For Example: {{"40093166", "left_mono" }, {"40134758", "right_mono"}, {"40099899", "color"}}
          * @throws GeniException
@@ -177,8 +174,8 @@ namespace basler
         /**
          * @brief
          *
-         * @param[in] request
-         * @param[out] response
+         * @param[in] request empty request
+         * @param[out] response all mono and color images
          */
         void _getAllImagesCb(const std::shared_ptr<GetAllImages::Request> request,
                              std::shared_ptr<GetAllImages::Response> response);
@@ -186,16 +183,16 @@ namespace basler
         /**
          * @brief
          *
-         * @param[in] request
-         * @param[out] response
+         * @param[in] request empty request
+         * @param[out] response 4k color bgr image
          */
         void _getColorImageCb(const std::shared_ptr<GetColorImage::Request> request,
                               std::shared_ptr<GetColorImage::Response> response);
         /**
          * @brief
          *
-         * @param[in] request
-         * @param[out] response
+         * @param[in] request empty request
+         * @param[out] response right and left 4k mono images
          */
         void _getMonoImagesCb(const std::shared_ptr<GetMonoImages::Request> request,
                               std::shared_ptr<GetMonoImages::Response> response);
@@ -204,21 +201,19 @@ namespace basler
         /**
          * @brief
          *
-         * @param[in] request
-         * @param[out] response
+         * @param[in] request empty trigger request
+         * @param[out] response success or failure
          */
         void _openBaslerCamerasCb(const std::shared_ptr<Trigger::Request> request,
                                   std::shared_ptr<Trigger::Response> response);
         /**
          * @brief
          *
-         * @param[in] request
-         * @param[out] response
+         * @param[in] request empty trigger request
+         * @param[out] response success or failure
          */
         void _closeBaslerCamerasCb(const std::shared_ptr<Trigger::Request> request,
                                    std::shared_ptr<Trigger::Response> response);
-        // _PYLON_
-        // _JSON_
     };
 
 } // namespace basler
