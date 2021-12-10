@@ -4,7 +4,7 @@
  * @file  basler_driver
  * @name basler_driver.hpp
  * @addtogroup basler_ros2_driver
- * @image diagram code.jpg
+ * @image diagram data/camera_controller.png
  * @author Hasan Farag
  * @see [3d-processing](https://app.developerhub.io/robotics/v3.0/robotics/3d-processing)
  * @ref See also pylon docs for daa3840-45um and daa3840-45uc
@@ -31,7 +31,6 @@
 #include <chrono>
 #include <optional>
 #include <filesystem>
-#include <shared_mutex>
 /** @} */ // end of Cpp
 
 /** @defgroup Avena  header files for avena
@@ -62,8 +61,8 @@
 #include "basler_ros2_driver/basler_configuration_handlers.hpp"
 /** @} */ // end of Pylon
 
-/** @defgroup basler namespace for ros2 basler driver
- *  @{
+/** @defgroup basler The basler namespace
+ *  @brief wraps all pylon driver of dart usb3 basler cameras in ros2 functionalities
  */
 namespace basler
 {
@@ -79,7 +78,8 @@ namespace basler
 
     /**
      * @class BaslerROS2Driver  main ROS2 node class
-     * @brief  represents ROS2 node for basler driver*
+     * @ingroup basler
+     * @brief  represents ROS2 node for basler driver
      */
     class BaslerROS2Driver : public rclcpp::Node
     {
@@ -104,7 +104,6 @@ namespace basler
         BaslerROS2Driver &operator=(const BaslerROS2Driver &) = delete;
         /**
          * @brief Destroy the Basler ROS2 Driver object
-         *
          */
         virtual ~BaslerROS2Driver();
 

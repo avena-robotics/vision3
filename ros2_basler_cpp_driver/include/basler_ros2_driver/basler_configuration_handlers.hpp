@@ -4,26 +4,33 @@
  * @file  basler_configuration_handlers
  * @name basler_configuration_handlers.hpp
  * @addtogroup basler_ros2_driver
- * @image diagram code.jpg
  * @author Hasan Farag
  * @link [3d-processing] https://app.developerhub.io/robotics/v3.0/robotics/3d-processing
  * @ref See also pylon docs for daa3840-45um and daa3840-45uc
  */
 #ifndef __BASLER_CONFIGUARTION_HANDLER_HPP__
 #define __BASLER_CONFIGUARTION_HANDLER_HPP__
+
+/**
+ *  @defgroup Headers file headers
+ */
+/** @defgroup Pylon header files for basler sdk
+ * @ingroup headers
+ *  @{
+ */
 #include <pylon/ConfigurationEventHandler.h>
 #include <pylon/ParameterIncludes.h>
-/**
- * @brief
- *
- */
+/** @} */ // end of Pylon
+    /**
+     * @class MonoCameraConfigurationHandler  Mono Camera configurator
+     * @brief  represents Mono cameras Configuration Event Handler
+     */
 class MonoCameraConfigurationHandler : public Pylon::CConfigurationEventHandler
 {
 public:
     /**
-     * @brief
-     *
-     * @param camera
+     * @brief configure mono cameras on open camera event
+     * @param[in] camera  pylon device
      */
     void OnOpened(Pylon::CInstantCamera &camera)
     {
@@ -75,17 +82,16 @@ public:
         }
     }
 };
-/**
- * @brief
- *
- */
+    /**
+     * @class ColorCameraConfigurationHandler  color Camera configurator
+     * @brief  represents color cameras Configuration Event Handler
+     */
 class ColorCameraConfigurationHandler : public Pylon::CConfigurationEventHandler
 {
 public:
-    /**
-     * @brief
-     *
-     * @param camera
+   /**
+     * @brief configure color cameras on open camera event
+     * @param[in] camera  pylon device
      */
     void OnOpened(Pylon::CInstantCamera &camera)
     {
