@@ -1,3 +1,14 @@
+/**
+ * This file is part of basler_ros2_driver ROS2 Package
+ * License declaration
+ * @file  basler_image_handlers
+ * @name basler_image_handlers.hpp
+ * @addtogroup basler_ros2_driver
+ * @image diagram code.jpg
+ * @author Hasan Farag
+ * @link [3d-processing] https://app.developerhub.io/robotics/v3.0/robotics/3d-processing
+ * @ref See also pylon docs for daa3840-45um and daa3840-45uc
+ */
 #ifndef __BASLER_IMAGE_HANDLER_HPP__
 #define __BASLER_IMAGE_HANDLER_HPP__
 // __HEADERs__
@@ -18,13 +29,19 @@
 #include <sensor_msgs/msg/image.hpp>
 #include <cv_bridge/cv_bridge.h>
 
+/** @defgroup basler The basler namespace
+ *  @brief wraps all pylon driver of dart usb3 basler cameras in ros2 functionalities
+ */
 namespace basler
 {
     // __Deductions__
 
     // _ROS_
     using Image = sensor_msgs::msg::Image;
+
     /**
+     * @class
+     * @ingroup basler
      * @brief
      *
      */
@@ -55,9 +72,9 @@ namespace basler
         virtual ~ColorImageEventHandler() = default;
         /**
          * @brief
-         *
          * @param camera
          * @param grabResult
+         * @overload
          */
         void OnImageGrabbed(Pylon::CInstantCamera &camera, const Pylon::CGrabResultPtr &grabResult) override;
         /**
@@ -68,6 +85,7 @@ namespace basler
         cv::Mat get4kColorImage() const;
 
     private:
+        /// color hd
         cv::Mat _color_4k_image, _color_hd_image;
         mutable std::mutex _4k_color_mutex;
         // _ROS_
@@ -84,6 +102,7 @@ namespace basler
         LeftMonoImageEventHandler() = default;
         /**
          * @brief Construct a new Left Mono Image Event Handler object
+         * @relatesalso
          *
          */
         LeftMonoImageEventHandler(const LeftMonoImageEventHandler &) = delete;
@@ -153,8 +172,8 @@ namespace basler
         void OnImageGrabbed(Pylon::CInstantCamera &camera, const Pylon::CGrabResultPtr &grabResult) override;
         /**
          * @brief Get the Right Monoimage object
-         * 
-         * @return cv::Mat 
+         *
+         * @return cv::Mat
          */
         cv::Mat getRightMonoimage() const;
 

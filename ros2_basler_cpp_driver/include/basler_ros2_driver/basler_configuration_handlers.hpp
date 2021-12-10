@@ -1,3 +1,14 @@
+/**
+ * This file is part of basler_ros2_driver ROS2 Package
+ * License declaration
+ * @file  basler_configuration_handlers
+ * @name basler_configuration_handlers.hpp
+ * @addtogroup basler_ros2_driver
+ * @image diagram code.jpg
+ * @author Hasan Farag
+ * @link [3d-processing] https://app.developerhub.io/robotics/v3.0/robotics/3d-processing
+ * @ref See also pylon docs for daa3840-45um and daa3840-45uc
+ */
 #ifndef __BASLER_CONFIGUARTION_HANDLER_HPP__
 #define __BASLER_CONFIGUARTION_HANDLER_HPP__
 #include <pylon/ConfigurationEventHandler.h>
