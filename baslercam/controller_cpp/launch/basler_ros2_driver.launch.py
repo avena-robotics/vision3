@@ -11,7 +11,7 @@ def generate_launch_description():
         executable='component_container',
         composable_node_descriptions=[
             ComposableNode(
-                package='basler_ros2_driver',
+                package='controller_cpp',
                 plugin='basler::BaslerROS2Driver'
                 # remappings=[
                 #     # ('/group_1/mono_1', '/left/image_raw'),

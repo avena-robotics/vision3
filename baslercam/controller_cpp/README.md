@@ -10,7 +10,7 @@
 
 # Launch Camera controller Server
 
-3. ros2 launch basler_ros2_driver basler_ros2_driver.launch.py 
+3. ros2 launch controller_cpp basler_ros2_driver.launch.py 
 
 # Call Camera controller Services
 
@@ -26,7 +26,7 @@
 
 # (Optional) View hd Color Image
 
-9. rviz2 -d ros2_basler_cpp_driver/config/basler.rviz
+9. rviz2 -d controller_cpp/config/basler.rviz
 
 # (Optional) check fps of color stream
 

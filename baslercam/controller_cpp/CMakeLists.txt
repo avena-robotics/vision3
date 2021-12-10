@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(basler_ros2_driver)
+project(controller_cpp)
 
 
 # Default to C++17
