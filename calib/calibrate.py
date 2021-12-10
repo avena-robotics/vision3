@@ -331,7 +331,9 @@ left_mono_intrinsic = {"fx": left_mono_cam_mat[0][0],
                        "k2": left_mono_dist_coeff[1][0],
                        "p1": left_mono_dist_coeff[2][0],
                        "p2": left_mono_dist_coeff[3][0],
-                       "k3": left_mono_dist_coeff[4][0]}
+                       "k3": left_mono_dist_coeff[4][0],
+                       "width": imsize[0],
+                       "height": imsize[1]}
 
 right_mono_intrinsic = {"fx": right_mono_cam_mat[0][0],
                         "fy": right_mono_cam_mat[1][1],
@@ -341,7 +343,9 @@ right_mono_intrinsic = {"fx": right_mono_cam_mat[0][0],
                         "k2": right_mono_dist_coeff[1][0],
                         "p1": right_mono_dist_coeff[2][0],
                         "p2": right_mono_dist_coeff[3][0],
-                        "k3": right_mono_dist_coeff[4][0]}
+                        "k3": right_mono_dist_coeff[4][0],
+                        "width": imsize[0],
+                        "height": imsize[1]}
 
 color_intrinsic = {"fx": color_cam_mat[0][0],
                    "fy": color_cam_mat[1][1],
@@ -351,7 +355,9 @@ color_intrinsic = {"fx": color_cam_mat[0][0],
                    "k2": color_dist_coeff[1][0],
                    "p1": color_dist_coeff[2][0],
                    "p2": color_dist_coeff[3][0],
-                   "k3": color_dist_coeff[4][0]}
+                   "k3": color_dist_coeff[4][0],
+                   "width": imsize[0],
+                   "height": imsize[1]}
 
 # Left mono to right mono
 rotation = R.from_matrix(rot_l_r)
@@ -387,8 +393,8 @@ rect_left_mono_to_right_mono = {'R_left': R_left_l_r.tolist(),
                                 'P_left': P_left_l_r.tolist(),
                                 'P_right': P_right_l_r.tolist(),
                                 'Q': Q_l_r.tolist(),
-                                "parent": "left_mono",
-                                "child": "right_mono"}
+                                "first_cam": "left_mono",
+                                "second_cam": "right_mono"}
 
 # Rectification left mono to color
 rect_left_mono_to_color = {'R_left': R_left_l_color.tolist(),
@@ -396,8 +402,8 @@ rect_left_mono_to_color = {'R_left': R_left_l_color.tolist(),
                            'P_left': P_left_l_color.tolist(),
                            'P_right': P_right_l_color.tolist(),
                            'Q': Q_l_color.tolist(),
-                           'parent': 'left_mono',
-                           'child': 'color'}
+                           'first_cam': 'left_mono',
+                           'second_cam': 'color'}
 
 
 output_json = {

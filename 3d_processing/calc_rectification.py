@@ -38,7 +38,7 @@ def init_rect_maps(cam_matrix, dist_coeffs, R_mat, P_mat, imsize):
         dist_coeffs: distortion coefficients (k1, k2, p1, p2, k3) arrange in 1D array (np.ndarray),
         R_mat: 3x3 rectification transform (rotation matrix) for camera (np.ndarray),
         P_mat: 3x4 projection matrix in the new coordinate system (np.ndarray),
-        imsize: resolution of image for which the mapping are calulated, it can be 2 or 3 size tuple,
+        imsize: resolution of image for which the mapping are calulated, it can be 2 or 3 size tuple (height, width)
 
     Returns:
         Tuple with 2 elements:
