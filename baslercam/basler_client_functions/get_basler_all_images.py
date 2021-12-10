@@ -13,6 +13,8 @@ def get_basler_all_images() -> tuple:
     """
     service_result: GetAllImages.Response = call_empty_service_and_get_data('get_basler_all_images', GetAllImages)
     if service_result:
+        if service_result.left_mono.width == 0 or service_result.right_mono.width == 0 or service_result.color.width == 0:
+            return np.array([]), np.array([]), np.array([])
         bridge = CvBridge()
         left_mono = bridge.imgmsg_to_cv2(service_result.left_mono)                
         right_mono = bridge.imgmsg_to_cv2(service_result.right_mono) 

@@ -1,5 +1,8 @@
 import cv2
 from datetime import datetime
+import threading
+import copy
+import time
 
 from pypylon import genicam
 from pypylon import pylon
@@ -11,6 +14,7 @@ from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 from rclpy.node import Node
 import rclpy
+
 
 class ColorImageEventHandler(pylon.ImageEventHandler):
     """color image event handler to manage grab result
@@ -25,6 +29,26 @@ class ColorImageEventHandler(pylon.ImageEventHandler):
         super().__init__(*args)
         self.color_image = None
         self.color_hd_image = None
+        self.color_lock = threading.Lock()
+        self.hd_color_lock = threading.Lock()
+        # self.cnt = 0
+    
+       
+    def _getColorImage(self):
+        with self.color_lock:
+            if self.color_image is not None:
+                temp = copy.deepcopy(self.color_image)
+                return temp
+            else:
+                return None
+    
+    def _getHDColorImage(self):
+        with self.hd_color_lock:
+            if self.color_hd_image is not None:
+                temp = copy.deepcopy(self.color_hd_image)
+                return temp
+            else:
+                return None
 
     def OnImageGrabbed(self, camera: pylon.InstantCamera, grab_result: pylon.GrabResult) -> None:
         """Image callback for color image
@@ -42,9 +66,16 @@ class ColorImageEventHandler(pylon.ImageEventHandler):
             CVError: An error occurred accessing the cv numpy array.
         """
         if grab_result.GrabSucceeded():
-            self.color_image = grab_result.GetArray()
-            self.color_image = cv2.rotate(self.color_image,cv2.ROTATE_90_COUNTERCLOCKWISE)
-            self.color_hd_image = cv2.resize(self.color_image, (self.color_image.shape[1]//3, self.color_image.shape[0]//3), interpolation = cv2.INTER_AREA)
+            temp = grab_result.GetArray()
+            with self.color_lock:
+                # ts = time.time()
+                # sec = int(ts)
+                # ms = int((ts - sec) * 1000)
+                # print(f'{self.cnt:5d}; {sec}; {ms:3d}; color')
+                # self.cnt += 1
+                self.color_image = cv2.rotate(temp, cv2.ROTATE_90_COUNTERCLOCKWISE)
+            with self.hd_color_lock:
+                self.color_hd_image = cv2.resize(self.color_image, (self.color_image.shape[1]//3, self.color_image.shape[0]//3), interpolation = cv2.INTER_AREA)
             grab_result.Release()
 
 class LeftMonoImageEventHandler(pylon.ImageEventHandler):
@@ -58,6 +89,17 @@ class LeftMonoImageEventHandler(pylon.ImageEventHandler):
     def __init__(self, *args):
         super().__init__(*args)
         self.left_mono_image = None
+        self.left_lock = threading.Lock()
+        # self.cnt = 0
+    
+    def _getLeftMonoImage(self):
+        with self.left_lock:
+            if self.left_mono_image is not None:
+                temp = copy.deepcopy(self.left_mono_image)
+                return temp
+            else:
+                return None
+
 
     def OnImageGrabbed(self, camera: pylon.InstantCamera, grab_result: pylon.GrabResult)->None:
         """Image callback for left mono image
@@ -74,8 +116,14 @@ class LeftMonoImageEventHandler(pylon.ImageEventHandler):
             CVError: An error occurred accessing the cv numpy array
         """
         if grab_result.GrabSucceeded():
-            self.left_mono_image = grab_result.GetArray()
-            self.left_mono_image = cv2.rotate(self.left_mono_image,cv2.ROTATE_90_COUNTERCLOCKWISE)
+            temp = grab_result.GetArray()
+            with self.left_lock:
+                # ts = time.time()
+                # sec = int(ts)
+                # ms = int((ts - sec) * 1000)
+                # print(f'{self.cnt:5d}; {sec}; {ms:3d}; left mono')
+                # self.cnt += 1
+                self.left_mono_image = cv2.rotate(temp, cv2.ROTATE_90_COUNTERCLOCKWISE)
             grab_result.Release()
 
 
@@ -90,6 +138,16 @@ class RightMonoEventHandler(pylon.ImageEventHandler):
     def __init__(self, *args):
         super().__init__(*args)
         self.right_mono_image = None
+        self.right_lock = threading.Lock()
+        # self.cnt = 0
+    
+    def _getRightMonoImage(self):
+        with self.right_lock:
+            if self.right_mono_image is not None:
+                temp = copy.deepcopy(self.right_mono_image)
+                return temp
+            else:
+                return None
 
     def OnImageGrabbed(self, camera: pylon.InstantCamera, grab_result: pylon.GrabResult)->None:
         """Image callback for mono image
@@ -106,8 +164,14 @@ class RightMonoEventHandler(pylon.ImageEventHandler):
             CVError: An error occurred accessing the cv numpy array.
         """
         if grab_result.GrabSucceeded():
-            self.right_mono_image = grab_result.GetArray()
-            self.right_mono_image = cv2.rotate(self.right_mono_image,cv2.ROTATE_90_COUNTERCLOCKWISE)
+            temp = grab_result.GetArray()
+            with self.right_lock:
+                # ts = time.time()
+                # sec = int(ts)
+                # ms = int((ts - sec) * 1000)
+                # print(f'{self.cnt:5d}; {sec}; {ms:3d}; right mono')
+                # self.cnt += 1
+                self.right_mono_image = cv2.rotate(temp, cv2.ROTATE_90_COUNTERCLOCKWISE)
             grab_result.Release()
 
 
@@ -175,6 +239,7 @@ class BaslerPyDriver(Node):
         self._left_mono_image_event_handler = None
         self._right_mono_event_handler = None
 
+
     def open_basler_cameras(self,camera_group_serials: dict)->pylon.InstantCameraArray:
         """It is responsible for opening multicamera and start grabbing data 
         
@@ -213,7 +278,7 @@ class BaslerPyDriver(Node):
             cameras.Open()
             for camera in cameras:
                 camera = self.configure_basler_camera(camera)
-            cameras.StartGrabbing(pylon.GrabStrategy_LatestImageOnly,pylon.GrabLoop_ProvidedByInstantCamera)
+            cameras.StartGrabbing(pylon.GrabStrategy_LatestImageOnly, pylon.GrabLoop_ProvidedByInstantCamera)
             self.get_logger().info("cameras are open")
             return cameras
         except genicam.GenericException as e:
@@ -257,6 +322,7 @@ class BaslerPyDriver(Node):
             cameras.StopGrabbing()
         if cameras.IsOpen():
             cameras.Close()
+        self.get_logger().info("cameras are closed")
 
     def close_basler_cameras_cb(self, request: Trigger.Request , response: Trigger.Response) -> Trigger.Response:
         """Callback for closing cameras as a response to service call
@@ -273,6 +339,9 @@ class BaslerPyDriver(Node):
         if self._avena_basler_cameras is not None and self._avena_basler_cameras.GetSize() > 0:
             self.close_basler_cameras(self._avena_basler_cameras)
             self._avena_basler_cameras = None
+            self._right_mono_event_handler = None
+            self._left_mono_event_handler = None
+            self._color_image_event_handler = None
             self.timer.cancel()
             response.success = True
         else:
@@ -293,8 +362,9 @@ class BaslerPyDriver(Node):
             None
         """
         self.get_logger().info("get_basler_color_image is called")
-        if self._color_image_event_handler.color_image is not None:
-            response.color = self.bridge.cv2_to_imgmsg(self._color_image_event_handler.color_image, "bgr8") 
+        color_image = self._color_image_event_handler._getColorImage()
+        if self._color_image_event_handler is not None and color_image  is not None:
+            response.color = self.bridge.cv2_to_imgmsg(color_image, "bgr8") 
         return response
 
     def get_basler_mono_images_cb(self, request: GetMonoImages.Request, response: GetMonoImages.Response) -> GetMonoImages.Response:
@@ -309,10 +379,12 @@ class BaslerPyDriver(Node):
             None
         """
         self.get_logger().info("get_basler_mono_images is called")
-        if self._left_mono_image_event_handler.left_mono_image is not None:
-            response.left_mono =  self.bridge.cv2_to_imgmsg(self._left_mono_image_event_handler.left_mono_image, "mono8") 
-        if self._right_mono_event_handler.right_mono_image is not None:
-            response.right_mono  =  self.bridge.cv2_to_imgmsg(self._right_mono_event_handler.right_mono_image, "mono8")  
+        left_mono_image =self._left_mono_image_event_handler._getLeftMonoImage()
+        right_mono_image =self._right_mono_event_handler._getRightMonoImage()
+        if self._left_mono_image_event_handler is not None and left_mono_image is not None:
+            response.left_mono =  self.bridge.cv2_to_imgmsg(left_mono_image, "mono8") 
+        if self._right_mono_event_handler is not None and right_mono_image is not None:
+            response.right_mono  =  self.bridge.cv2_to_imgmsg(right_mono_image, "mono8")  
         return response
 
     def get_basler_all_images_cb(self, request: GetAllImages.Response, response: GetAllImages.Response) -> GetAllImages.Response:
@@ -327,12 +399,15 @@ class BaslerPyDriver(Node):
             None
         """
         self.get_logger().info("get_basler_all_images is called")
-        if self._color_image_event_handler.color_image is not None:
-            response.color = self.bridge.cv2_to_imgmsg(self._color_image_event_handler.color_image, "bgr8") 
-        if self._left_mono_image_event_handler.left_mono_image is not None:
-            response.left_mono =  self.bridge.cv2_to_imgmsg(self._left_mono_image_event_handler.left_mono_image, "mono8") 
-        if self._right_mono_event_handler.right_mono_image is not None:
-            response.right_mono  =  self.bridge.cv2_to_imgmsg(self._right_mono_event_handler.right_mono_image, "mono8") 
+        left_mono_image =self._left_mono_image_event_handler._getLeftMonoImage()
+        right_mono_image =self._right_mono_event_handler._getRightMonoImage()
+        color_image =self._color_image_event_handler._getColorImage()
+        if self._color_image_event_handler is not None and color_image is not None:
+            response.color = self.bridge.cv2_to_imgmsg(color_image, "bgr8") 
+        if self._left_mono_image_event_handler is not None and left_mono_image is not None:
+            response.left_mono =  self.bridge.cv2_to_imgmsg(left_mono_image, "mono8") 
+        if self._right_mono_event_handler is not None and right_mono_image is not None:
+            response.right_mono  =  self.bridge.cv2_to_imgmsg(right_mono_image, "mono8") 
         return response
 
     def basler_color_hd_callback(self) -> None:
@@ -344,15 +419,17 @@ class BaslerPyDriver(Node):
         Raises:
             None
         """
-        if self._color_image_event_handler is not None and self._color_image_event_handler.color_hd_image is not None:
-            hd_color_image = self.bridge.cv2_to_imgmsg(self._color_image_event_handler.color_hd_image, "bgr8") 
-            now = datetime.now()
-            hd_color_image.header.frame_id = "/basler/color"
-            hd_color_image.header.stamp.sec =now.second
-            hd_color_image.header.stamp.nanosec =now.microsecond//1000
-            if self.basler_camera_color_pub.get_subscription_count() > 0 and hd_color_image is not None:
-                # Very Slow (average 55 ms) TODO: FIX https://github.com/ros2/rclpy/issues/856
-                self.basler_camera_color_pub.publish(hd_color_image)
+        if self._color_image_event_handler is not None:
+            hd_color_image_temp =self._color_image_event_handler._getHDColorImage()
+            if hd_color_image_temp is not None:
+                hd_color_image = self.bridge.cv2_to_imgmsg(hd_color_image_temp, "bgr8") 
+                now = datetime.now()
+                hd_color_image.header.frame_id = "/basler/color"
+                hd_color_image.header.stamp.sec =now.second
+                hd_color_image.header.stamp.nanosec =now.microsecond//1000
+                if self.basler_camera_color_pub.get_subscription_count() > 0 and hd_color_image is not None:
+                    # Very Slow (average 55 ms) TODO: FIX https://github.com/ros2/rclpy/issues/856
+                    self.basler_camera_color_pub.publish(hd_color_image)
 
     def configure_basler_camera(self,camera: pylon.InstantCamera)->pylon.InstantCamera:
         """Configure camera for auto exposure, binning, pixel format and fps
@@ -364,7 +441,7 @@ class BaslerPyDriver(Node):
             None
         """
         ColorAutoTargetBrightness=0.15
-        MonoAutoTargetBrightness=0.2
+        MonoAutoTargetBrightness=0.35
         MonoBinning=1
         # 18.7 fps x 3840 x 2160 x 1 byte ~= 160000000 bytes/s
         camera.DeviceLinkThroughputLimit.SetValue(320000000) # 37 fps

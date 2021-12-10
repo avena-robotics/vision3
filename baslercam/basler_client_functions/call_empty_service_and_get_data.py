@@ -15,7 +15,7 @@ def call_empty_service_and_get_data(srv_name: str, srv_type):
     node = rclpy.create_node(srv_name + '_node')
     cli = node.create_client(srv_type, srv_name)
     print('Waiting for server for 3 seconds...')
-    if cli.wait_for_service(timeout_sec=3.0):
+    if not cli.wait_for_service(timeout_sec=3.0):
         print(f'Service "{srv_name}" is not available')
         return None
     req = srv_type.Request()
