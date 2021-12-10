@@ -1,4 +1,7 @@
 # ROS2 Basler CPP Driver
+# Diagram
+
+![alt text](https://github.com/HasanFaragRob/vision3/blob/cpp_basler/ros2_basler_cpp_driver/data/camera_controller.png?raw=true)
 
 ## Source ROS 
 1. source install/setup.bash 
