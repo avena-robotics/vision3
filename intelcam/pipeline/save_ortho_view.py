@@ -137,7 +137,7 @@ def trunc_depth(depth_frame, d):
     """
     TODO
     """
-    arr_img = np.asarray(depth_frame.to_legacy_image())
+    arr_img = np.asarray(depth_frame.to_legacy())
     arr_img[arr_img >= d] = 0
     tensor = o3d.core.Tensor(arr_img)
     image = o3d.t.geometry.Image(tensor)
@@ -148,7 +148,7 @@ def bilateral_filter(depth_frame, d, sigma_color, sigma_space):
     """
     TODO
     """
-    arr_img = np.asarray(depth_frame.to_legacy_image()).astype(np.float32)
+    arr_img = np.asarray(depth_frame.to_legacy()).astype(np.float32)
     arr_filtered = cv2.bilateralFilter(arr_img, d, sigma_color, sigma_space)
     tensor = o3d.core.Tensor(arr_filtered.astype(np.uint16))
     image = o3d.t.geometry.Image(tensor)
@@ -159,7 +159,7 @@ def statistical_outlier_removal(point_cloud, nb_neighbors, std_ratio):
     """
     TODO
     """
-    point_cloud = point_cloud.to_legacy_pointcloud()
+    point_cloud = point_cloud.to_legacy()
     _, ind = point_cloud.remove_statistical_outlier(nb_neighbors, std_ratio)
     point_cloud = point_cloud.select_by_index(ind)
     point_cloud_gpu = o3d.t.geometry.PointCloud.from_legacy_pointcloud(point_cloud)
@@ -177,7 +177,7 @@ def median_blur(image: np.ndarray, kernel_size: int = 5) -> np.ndarray:
 if __name__ == '__main__':
     #########################################################
     # User modifies path for dataset
-    BASE_DIR = '/home/avena/software/intel/dataset001'
+    BASE_DIR = '/home/avena/datasets/intel/dataset001'
     intel_configuration_file = '../config/cam9_config.json'
     voxel_size = 0.001
     median_filter_kernel = 5
@@ -206,8 +206,8 @@ if __name__ == '__main__':
 
             # Create point cloud using Open3D
             print('Creating point cloud from RGBD image')
-            rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(color=color.to_legacy_image(),
-                                                                        depth=depth.to_legacy_image(),
+            rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(color=color.to_legacy(),
+                                                                        depth=depth.to_legacy(),
                                                                         depth_trunc=1.2,
                                                                         convert_rgb_to_intensity=False)
             intrinsic = o3d.camera.PinholeCameraIntrinsic(width=camera_info["width"],
@@ -225,18 +225,17 @@ if __name__ == '__main__':
             # Calculate orthographic view
             rgb_array, depth_array = calculate_rgbd_orthophoto(points, colors, voxel_size)
 
-            print('Filtering')
-            # Orthographic view RGB and depth filtration
-            # Median filter
-            # rgb_array_median = cv2.medianBlur(rgb_array, 7)
-            rgb_array_median = median_blur(rgb_array, median_filter_kernel)
-            depth_array_median = median_blur(depth_array, median_filter_kernel)
+            # print('Filtering')
+            # # Orthographic view RGB and depth filtration
+            # # Median filter
+            # rgb_array = median_blur(rgb_array, median_filter_kernel)
+            # depth_array = median_blur(depth_array, median_filter_kernel)
 
             # Save images
             ts_now = time.time_ns()
             print(f'Saving images to "{BASE_DIR}" directory')
-            cv2.imwrite(os.path.join(BASE_DIR, f'{ts_now}_depth.png'), depth_array_median)
-            cv2.imwrite(os.path.join(BASE_DIR, f'{ts_now}_color.png'), cv2.cvtColor(rgb_array_median, cv2.COLOR_RGB2BGR))
+            cv2.imwrite(os.path.join(BASE_DIR, f'{ts_now}_depth.png'), depth_array)
+            cv2.imwrite(os.path.join(BASE_DIR, f'{ts_now}_color.png'), cv2.cvtColor(rgb_array, cv2.COLOR_RGB2BGR))
             print(f'Save images called {cnt} times')
             cnt += 1
             pressed_key = input('Pressed ENTER to make a photo (or "q" and then ENTER to exit): ')
