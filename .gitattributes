@@ -1,1 +1,2 @@
 *.png filter=lfs diff=lfs merge=lfs -text
+baslercam/controller_cpp/data/camera_controller.png filter= diff= merge=  text
