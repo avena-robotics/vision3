@@ -178,7 +178,7 @@ if __name__ == '__main__':
     #########################################################
     # User modifies path for dataset
     BASE_DIR = '/home/avena/software/intel/dataset001'
-    intel_configuration_file = '/home/avena/vision/vision/intel/input/cam9_config.json'
+    intel_configuration_file = '../config/cam9_config.json'
     voxel_size = 0.001
     median_filter_kernel = 5
     #########################################################
