@@ -1,5 +1,6 @@
 from typing import Tuple
 import open3d as o3d
+import pyrealsense2 as rs
 import json
 import time
 import numpy as np
@@ -12,34 +13,56 @@ from numba import jit
 import matplotlib.pyplot as plt
 
 
-def open_intel_camera(config_filename):
+def open_intel_camera(config_filename: str):
+    """Opens Intel Realsense camera.
+
+    This function is responsible for opening Intel Realsense camera 
+    with provided path to configuration file which consists serial number,
+    resolutions for depth and color, framerates and laser power.
+
+    Args:
+        config_filename: path to configuration file
+    
+    Returns:
+        Tuple with 2 elements:
+            - handle to opened camera,
+            - dictionary with intrinsic parameters of color sensor (i.e. fx, fy, cx, cy, width, height)
     """
-    TODO
-    """
-    # Load JSON with configuration
-    with open(config_filename) as cf:
-        rs_cfg = o3d.t.io.RealSenseSensorConfig(json.load(cf))
+    camera_settings = json.load(open(config_filename))
+    camera_serial = camera_settings["serial_number"]
+    camera_config = rs.config()
+    camera_config.enable_stream(rs.stream.depth, int(camera_settings["stream-depth-width"]),
+                                int(camera_settings["stream-depth-height"]), rs.format.z16,
+                                int(camera_settings["stream-depth-fps"]))
+    camera_config.enable_stream(rs.stream.color, int(camera_settings["stream-color-width"]),
+                                int(camera_settings["stream-color-height"]), rs.format.rgb8,
+                                int(camera_settings["stream-color-fps"]))
+    camera_config.enable_device(camera_serial)
+    camera_handle = rs.pipeline()
+    camera_pipeline_profile = camera_handle.start(camera_config)
+    camera_device = camera_pipeline_profile.get_device()
+    sensors = camera_device.query_sensors()
+    for sensor in sensors:
+        if rs.sensor.as_depth_sensor(sensor):
+            sensor.set_option(rs.option.emitter_enabled, 1)
+            sensor.set_option(rs.option.laser_power, int(camera_settings["controls-laserpower"]))
+            sensor.set_option(rs.option.enable_auto_exposure, 1)
 
-    # Initialize device and get metadata
-    rscam = o3d.t.io.RealSenseSensor()
-    rscam.init_sensor(rs_cfg)
-    rgbd_metadata = rscam.get_metadata()
+        elif rs.sensor.as_color_sensor(sensor):
+            sensor.set_option(rs.option.enable_auto_exposure, 1)
+            sensor.set_option(rs.option.enable_auto_white_balance, 1)
 
-    # Get intrinsic parameters from metadata
-    fx = rgbd_metadata.intrinsics.intrinsic_matrix[0][0]
-    fy = rgbd_metadata.intrinsics.intrinsic_matrix[1][1]
-    ppx = rgbd_metadata.intrinsics.intrinsic_matrix[0][2]
-    ppy = rgbd_metadata.intrinsics.intrinsic_matrix[1][2]
-    height = rgbd_metadata.height
-    width = rgbd_metadata.width
+    # Read intrinsic
+    camera_pipeline_profile = camera_handle.get_active_profile()
+    color_profile = camera_pipeline_profile.get_stream(rs.stream.color)
+    color_intrinsic = color_profile.as_video_stream_profile().get_intrinsics()
 
-    # Start acquiring images
-    rscam.start_capture(start_record=False)
-    print('Waiting a few seconds for camera to start...\n')
-    time.sleep(1)
+    print('Waiting for a few seconds to start camera...')
+    time.sleep(2)
 
-    # Return results
-    return rscam, {"fx": fx, "fy": fy, "cx": ppx, "cy": ppy, "height": height, "width": width}
+    return camera_handle, {"fx": color_intrinsic.fx, "fy": color_intrinsic.fy, 
+                           "cx": color_intrinsic.ppx, "cy": color_intrinsic.ppy, 
+                           "height": color_intrinsic.height, "width": color_intrinsic.width}
 
 
 def get_intel_all_images(camera_handle) -> Tuple[np.ndarray, np.ndarray]:
@@ -58,17 +81,52 @@ def get_intel_all_images(camera_handle) -> Tuple[np.ndarray, np.ndarray]:
             - color array: each channel is in [0; 255] range (np.ndarray),
             - depth array: distance in millimeters (np.ndarray)
     """
-    rgbd_frame = camera_handle.capture_frame(align_depth_to_color=True, wait=True)
-    color = np.array(rgbd_frame.color.to_legacy())
-    depth = np.array(rgbd_frame.depth.to_legacy())
-    return color, depth
+    # Aligner for depth to color
+    align_to = rs.stream.color
+    aligner = rs.align(align_to)
+    # Wait for synchronized color and depth frames
+    frames = camera_handle.wait_for_frames()
+    # Align depth to color frame
+    aligned_frames = aligner.process(frames)
+    # Depth
+    depth_frame = aligned_frames.get_depth_frame()
+    # Temporal filter
+    temporal_filter = rs.temporal_filter()
+    filter_smooth_alpha = rs.option.filter_smooth_alpha
+    filter_smooth_delta = rs.option.filter_smooth_delta
+    temporal_smooth_alpha = 0.03
+    temporal_smooth_delta = 60
+    temporal_filter.set_option(filter_smooth_alpha, temporal_smooth_alpha)
+    temporal_filter.set_option(filter_smooth_delta, temporal_smooth_delta)
+    # Spatial filter
+    spatial_filter = rs.spatial_filter()
+    filter_magnitude = rs.option.filter_magnitude
+    spatial_magnitude = 2
+    spatial_smooth_alpha = 0.5
+    spatial_smooth_delta = 17
+    spatial_filter.set_option(filter_smooth_alpha, spatial_smooth_alpha)
+    spatial_filter.set_option(filter_smooth_delta, spatial_smooth_delta)
+    spatial_filter.set_option(filter_magnitude, spatial_magnitude)
+    # Process depth with filters
+    temporal_filtered_depth_frame = temporal_filter.process(depth_frame)
+    filtered_depth_frame = spatial_filter.process(temporal_filtered_depth_frame)
+    depth_image = np.asanyarray(filtered_depth_frame.get_data())
+    # Color
+    color_frame = aligned_frames.get_color_frame()
+    color_image = np.asanyarray(color_frame.get_data())
+    return color_image, depth_image
 
 
 def close_intel_camera(camera_handle):
+    """Closes Intel Realsense camera.
+    
+    This function is responsible for closing camera 
+    to stop streaming data.
+
+    Args:
+        camera_handle: handler for camera which is used also to get images
     """
-    TODO
-    """
-    camera_handle.stop_capture()
+    camera_handle.stop()
 
 
 @jit(parallel=True, fastmath=True)
@@ -196,7 +254,7 @@ def median_blur(image: np.ndarray, kernel_size: int = 5) -> np.ndarray:
 
 
 def create_point_cloud(color: np.ndarray, depth: np.ndarray, camera_info: dict):
-    """Convert RGB and depth image to Open3D point cloud using camera intrinsic
+    """Convert RGB and depth image to Open3D point cloud using camera intrinsic.
     """
     rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(color=o3d.geometry.Image(color),
                                                                     depth=o3d.geometry.Image(depth),
@@ -218,7 +276,6 @@ if __name__ == '__main__':
     BASE_DIR = '/home/avena/datasets/intel/dataset001'
     intel_configuration_file = '../config/cam9_config.json'
     voxel_size = 1 # millimeters
-    median_filter_kernel = 5
     #########################################################
 
     # Creating directory for images
@@ -232,14 +289,16 @@ if __name__ == '__main__':
         cnt = 1
         while pressed_key != 'q':
             print('Reading color and depth images')
-            color, depth = get_intel_all_images(intel_camera_handle)
-            cv2.imwrite('/home/avena/Pictures/color.png', cv2.cvtColor(color, cv2.COLOR_RGB2BGR))
+            try:
+                color, depth = get_intel_all_images(intel_camera_handle)
+            except:
+                # Probably timeout occured while reading images.
+                # Set arrays to empty ones
+                color, depth = np.array([]), np.array([])          
+
             if color.size == 0 or depth.size == 0:
-                print('Failed to get images. Try to reopen camera...')
-                close_intel_camera(intel_camera_handle)
-                intel_camera_handle, camera_info = open_intel_camera(intel_configuration_file)
-                continue
-            
+                raise RuntimeError('Failed to get images. Reconnect cameras and run script again')
+                            
             print('Filtering depth in Z axis')
             depth = trunc_depth(depth, 1500)
 
@@ -255,18 +314,6 @@ if __name__ == '__main__':
             print('Calculating orthographic view')
             rgb_array, depth_array = calculate_rgbd_orthophoto(points, colors, voxel_size)
 
-            # print('Filtering')
-            # # Orthographic view RGB and depth filtration
-            # # Median filter
-            # rgb_array = median_blur(rgb_array, median_filter_kernel)
-            # depth_array = median_blur(depth_array, median_filter_kernel)
-
-            # plt.imshow(rgb_array)
-            # plt.show()
-
-            # plt.imshow(depth_array)
-            # plt.show()
-
             # Save images
             ts_now = time.time_ns()
             print(f'Saving images to "{BASE_DIR}" directory')
@@ -277,6 +324,5 @@ if __name__ == '__main__':
             pressed_key = input('Pressed ENTER to make a photo (or "q" and then ENTER to exit): ')
     except Exception as e:
         print(f'[ERROR]: {e}')
-        pass
     
     close_intel_camera(intel_camera_handle)

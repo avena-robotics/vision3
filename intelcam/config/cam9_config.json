@@ -1,9 +1,10 @@
 {
-    "serial": "121622061205",
-    "color_format": "RS2_FORMAT_RGB8",
-    "color_resolution": "1920,1080",
-    "depth_format": "RS2_FORMAT_Z16",
-    "depth_resolution": "1280,720",
-    "fps": "30",
-    "visual_preset": "RS2_RS400_VISUAL_PRESET_HIGH_ACCURACY"
+    "serial_number": "121622061205",
+    "stream-depth-width": 1280,
+    "stream-depth-height": 720,
+    "stream-depth-fps": 30,
+    "stream-color-width": 1920,
+    "stream-color-height": 1080,
+    "stream-color-fps": 30,
+    "controls-laserpower": 360
 }
