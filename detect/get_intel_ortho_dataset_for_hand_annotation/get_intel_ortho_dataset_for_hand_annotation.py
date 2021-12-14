@@ -85,7 +85,7 @@ def get_intel_all_images(camera_handle) -> Tuple[np.ndarray, np.ndarray]:
     align_to = rs.stream.color
     aligner = rs.align(align_to)
     # Wait for synchronized color and depth frames
-    frames = camera_handle.wait_for_frames()
+    frames = camera_handle.wait_for_frames(timeout_ms=2000)
     # Align depth to color frame
     aligned_frames = aligner.process(frames)
     # Depth
@@ -103,14 +103,14 @@ def get_intel_all_images(camera_handle) -> Tuple[np.ndarray, np.ndarray]:
     filter_magnitude = rs.option.filter_magnitude
     spatial_magnitude = 2
     spatial_smooth_alpha = 0.5
-    spatial_smooth_delta = 17
+    spatial_smooth_delta = 1
     spatial_filter.set_option(filter_smooth_alpha, spatial_smooth_alpha)
     spatial_filter.set_option(filter_smooth_delta, spatial_smooth_delta)
     spatial_filter.set_option(filter_magnitude, spatial_magnitude)
     # Process depth with filters
-    temporal_filtered_depth_frame = temporal_filter.process(depth_frame)
-    filtered_depth_frame = spatial_filter.process(temporal_filtered_depth_frame)
-    depth_image = np.asanyarray(filtered_depth_frame.get_data())
+    depth_frame = temporal_filter.process(depth_frame)
+    # depth_frame = spatial_filter.process(depth_frame)
+    depth_image = np.asanyarray(depth_frame.get_data())
     # Color
     color_frame = aligned_frames.get_color_frame()
     color_image = np.asanyarray(color_frame.get_data())
@@ -247,7 +247,8 @@ def statistical_outlier_removal(point_cloud, nb_neighbors, std_ratio):
 
 def median_blur(image: np.ndarray, kernel_size: int = 5) -> np.ndarray:
     """Median blur
-    TODO
+    
+    This function is 
     """
     depth_array_median = cv2.medianBlur(image, kernel_size)
     return depth_array_median
@@ -274,7 +275,7 @@ if __name__ == '__main__':
     #########################################################
     # User modifies path for dataset
     BASE_DIR = '/home/avena/datasets/intel/dataset001'
-    intel_configuration_file = '../config/cam9_config.json'
+    intel_configuration_file = 'config/cam9_config.json'
     voxel_size = 1 # millimeters
     #########################################################
 
@@ -298,7 +299,7 @@ if __name__ == '__main__':
 
             if color.size == 0 or depth.size == 0:
                 raise RuntimeError('Failed to get images. Reconnect cameras and run script again')
-                            
+
             print('Filtering depth in Z axis')
             depth = trunc_depth(depth, 1500)
 
@@ -313,6 +314,12 @@ if __name__ == '__main__':
             # Calculate orthographic view
             print('Calculating orthographic view')
             rgb_array, depth_array = calculate_rgbd_orthophoto(points, colors, voxel_size)
+
+            # Crop ortho view images
+            w_min = 50
+            w_max = w_min + 1000
+            rgb_array = rgb_array[:, w_min:w_max, :]
+            depth_array = depth_array[:, w_min:w_max]
 
             # Save images
             ts_now = time.time_ns()
