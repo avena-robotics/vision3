@@ -61,14 +61,30 @@ def configure_camera(camera: pylon.InstantCamera):
     #                              pylon.Cleanup_Delete)
 
 
+def get_images(cameras: pylon.InstantCameraArray):
+    # Trigger cameras
+    for camera in cameras:
+        camera.TriggerSoftware.Execute()
+
+    # Read images
+    images = [None] * cameras.GetSize()
+    for i, camera in enumerate(cameras):
+        grab_result = camera.RetrieveResult(5000, pylon.TimeoutHandling_ThrowException)
+
+        if grab_result and grab_result.GrabSucceeded():
+            images[i] = grab_result.GetArray()
+        else:
+            print(f'Failed retrieving result for {i + 1} camera')
+    return images
+
+
 if __name__ == '__main__':
-    BASE_PATH = '/home/avena/datasets'
-    CAMERA_1 = os.path.join(BASE_PATH, 'camera_1')
-    CAMERA_2 = os.path.join(BASE_PATH, 'camera_2')
-    CAMERA_3 = os.path.join(BASE_PATH, 'camera_3')
-    os.makedirs(CAMERA_1, exist_ok=True)
-    os.makedirs(CAMERA_2, exist_ok=True)
-    os.makedirs(CAMERA_3, exist_ok=True)
+    ########################################################
+    # User configuration
+    base_path = '/home/avena/basler/dataset'
+    amount_of_photos = 37
+    time_between_photos = 0.903 # seconds
+    ########################################################
 
     try:
         tlfactory= pylon.TlFactory.GetInstance()
@@ -89,41 +105,51 @@ if __name__ == '__main__':
         print("Cameras are opened and configured")
 
         cameras.StartGrabbing(pylon.GrabStrategy_OneByOne, pylon.GrabLoop_ProvidedByUser)
-        input('Press ENTER to start grabbing image')
+        input('Press ENTER to start grabbing images')
         print('Grabing images')
 
         start_time = time.perf_counter()
-        timeout = 1  # seconds
-        cam_images = {i: [] for i in range(cameras.GetSize())}
-        while time.perf_counter() - start_time < timeout:
+        cam_images = [None] * amount_of_photos
+        times = [None] * amount_of_photos
+        cnt = 0
+        while cnt < amount_of_photos:
             start_loop = time.perf_counter()
-            # Trigger cameras
-            for camera in cameras:
-                camera.TriggerSoftware.Execute()
 
-            # Read images
-            for i, camera in enumerate(cameras):
-                grab_result = camera.RetrieveResult(5000, pylon.TimeoutHandling_ThrowException)
+            # Read images from cameras
+            cam_images[cnt] = get_images(cameras)
 
-                if grab_result and grab_result.GrabSucceeded():
-                    cam_images[i].append(grab_result.GetArray())
-                else:
-                    print(f'Failed retrieving result for {i + 1} camera')
+            times[cnt] = time.time_ns()
             end_loop = time.perf_counter()
+            cnt += 1
             elapsed_time = end_loop - start_loop
-            # TODO: Calculate how much program should wait so that each loop elapses
-            # same amount of time.
-            time.sleep(0.02)
 
+            # Wait remaining time
+            time.sleep(time_between_photos - elapsed_time)
         print('Done grabbing')
 
+        ################################################################
+        # Saving background image
+        input('Please remove object from turntable and press ENTER')
+        bg_cam_images = get_images(cameras)
+        
+        print('Saving background images to files')
+        os.makedirs(os.path.join(base_path, 'background', 'camera_1'), exist_ok=True)
+        os.makedirs(os.path.join(base_path, 'background', 'camera_2'), exist_ok=True)
+        os.makedirs(os.path.join(base_path, 'background', 'camera_3'), exist_ok=True)
+        ts = time.time_ns()
+        for cam_id, bg_image in enumerate(bg_cam_images):
+            cv2.imwrite(os.path.join(base_path, 'background', f'camera_{cam_id + 1}', f'{ts}_camera_{cam_id + 1}.png'), bg_image)
+
+        ################################################################
         # Saving images to file
         print('Saving images to files')
-        for i in range(len(cam_images[i])):
-            ts = time.time_ns()
-            for cam_id, images in cam_images.items():
-                cv2.imwrite(os.path.join(BASE_PATH, f'camera_{cam_id + 1}', f'{ts}_camera_{cam_id + 1}.png'), images[i])
-    
+        os.makedirs(os.path.join(base_path, 'camera_1'), exist_ok=True)
+        os.makedirs(os.path.join(base_path, 'camera_2'), exist_ok=True)
+        os.makedirs(os.path.join(base_path, 'camera_3'), exist_ok=True)
+        for i, images in enumerate(cam_images):
+            for cam_id in range(cameras.GetSize()):
+                cv2.imwrite(os.path.join(base_path, f'camera_{cam_id + 1}', f'{times[i]}_camera_{cam_id + 1}.png'), images[cam_id])
+            
     except genicam.GenericException as e:
         print('[ERROR]:', e)
 
