@@ -305,7 +305,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--base_dir', type=str, 
                          help='absolute path to directory', nargs='?',
-                         default=f'{os.path.join(dir_default_path, "dataset")}')
+                         default=f'{os.path.join(os.path.expanduser("~"), "dataset")}')
     parser.add_argument('-c', '--configuration', type=str,
                         help='path to camera configuration file', nargs='?',
                         default=f'{config_default_path}')
