@@ -303,13 +303,13 @@ if __name__ == '__main__':
     dir_default_path = os.path.dirname(os.path.abspath(__file__))
     config_default_path = os.path.join(dir_default_path, 'config', 'cam9_config.json')
     parser = argparse.ArgumentParser()
-    parser.add_argument('base_dir', type=str, 
+    parser.add_argument('-d', '--base_dir', type=str, 
                          help='absolute path to directory', nargs='?',
-                         default=f'{dir_default_path}')
-    parser.add_argument('configuration', type=str,
+                         default=f'{os.path.join(dir_default_path, "dataset")}')
+    parser.add_argument('-c', '--configuration', type=str,
                         help='path to camera configuration file', nargs='?',
                         default=f'{config_default_path}')
-    parser.add_argument('voxel_size', type=float,
+    parser.add_argument('-s', '--voxel_size', type=float,
                         help='voxel grid size in millimeters', nargs='?',
                         default=1)
     args = parser.parse_args()
@@ -317,6 +317,10 @@ if __name__ == '__main__':
     intel_configuration_file = args.configuration
     voxel_size = args.voxel_size
     #########################################################
+
+    print(f'Saving images to "{base_dir}" directory')
+    print(f'Reading camera configuration file: "{intel_configuration_file}"')
+    print(f'Set voxel size is: {voxel_size}')
 
     # Creating directory for images
     os.makedirs(base_dir, exist_ok=True)
