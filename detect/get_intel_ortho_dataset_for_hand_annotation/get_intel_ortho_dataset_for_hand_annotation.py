@@ -1,14 +1,12 @@
 from typing import Tuple
-import open3d as o3d
-import pyrealsense2 as rs
+import argparse
 import json
 import time
 import numpy as np
 import os
-# import cupyx
-# from cupyx.scipy import ndimage
-import copy
 import cv2
+import open3d as o3d
+import pyrealsense2 as rs
 from numba import jit
 import matplotlib.pyplot as plt
 
@@ -139,7 +137,7 @@ def calculate_rgbd_orthophoto(points: np.ndarray, colors: np.ndarray, voxel_size
     Args:
         points: array with 3D coordinates of point cloud (each coordinate is assumed to be in millimeter) (np.ndarray),
         colors: array with RGB pixel (each channel in pixel is assumed to be in range [0, 1] (np.ndarray),
-        voxel_size: size of each voxel in XY plane in millimeter (float); default: 1, 
+        voxel_size: size of each voxel in XY plane in millimeters (float); default: 1, 
 
     Returns:
         Tuple with 2 elements:
@@ -151,8 +149,6 @@ def calculate_rgbd_orthophoto(points: np.ndarray, colors: np.ndarray, voxel_size
 
     # Convert type to int32
     points = points.astype(np.int32)
-    # points = (points * 1000).astype(np.int32)
-    # voxel_size = int(voxel_size * 1000)
     
     # Voxelize in XY plane
     points[:, 0] = (points[:, 0] - points[:, 0].min()) / voxel_size
@@ -188,22 +184,6 @@ def calculate_rgbd_orthophoto(points: np.ndarray, colors: np.ndarray, voxel_size
     
     return rgb_array, depth_array
 
-# # Utility function to convert RGB and depth in orthographic view to Open3D point cloud
-# def create_point_cloud_from_orthophoto_view(rgb: np.ndarray, depth: np.ndarray) -> o3d.geometry.PointCloud:
-#     points = []
-#     colors = []
-
-#     for r in range(depth.shape[0]):
-#         for c in range(depth.shape[1]):
-#             if depth[r, c] != 0:
-#                 points.append([r, c, depth[r, c]])
-#                 colors.append(rgb[r, c] / 255)
-
-#     pcd = o3d.geometry.PointCloud()
-#     pcd.points = o3d.utility.Vector3dVector(np.array(points))
-#     pcd.colors = o3d.utility.Vector3dVector(np.array(colors))
-#     return pcd
-
 
 # Filters
 def trunc_depth(depth_frame, d):
@@ -225,8 +205,21 @@ def trunc_depth(depth_frame, d):
 
 
 def bilateral_filter(depth_frame, d, sigma_color, sigma_space):
-    """
-    TODO
+    """Applies bilateral filter to input image.
+    
+    This function is responsible for filtering input image
+    by applying bilateral filtration which is highly effective
+    in noise removal while keeping edges sharp. This function
+    is to be used for depth images filtration.
+
+    Args:
+        depth_frame: input depth frame in UINT16 format with millimeters,
+        d: dimeter of each pixel's neighborhood,
+        sigma_color: filter sigma in the color space,
+        sigma_space: filter sigma in the coordinate space,
+    
+    Returns:
+        filtered depth image in UINT16 bit depth in millimeters
     """
     arr_img = depth_frame.astype(np.float32)
     arr_img = cv2.bilateralFilter(arr_img, d, sigma_color, sigma_space)
@@ -235,27 +228,60 @@ def bilateral_filter(depth_frame, d, sigma_color, sigma_space):
 
 
 def statistical_outlier_removal(point_cloud, nb_neighbors, std_ratio):
-    """
-    TODO
+    """Filters Open3D point cloud with statistical outlier removal. 
+    
+    This function is responsible for filtering input point cloud
+    by applying statistical analysis for each point in the cloud.
+
+    Args:
+        point_cloud: input cloud to be filtered tensor version (open3d.t.geometry.PointCloud),
+        nb_neighbors: number of closest points used to determine whether
+                      point is an outlier or inlier,
+        std_ratio: standard deviation ratio.
+
+    Returns:
+        filtered point cloud (open3d.t.geometry.PointCloud)
     """
     point_cloud = point_cloud.to_legacy()
     _, ind = point_cloud.remove_statistical_outlier(nb_neighbors, std_ratio)
     point_cloud = point_cloud.select_by_index(ind)
-    point_cloud_gpu = o3d.t.geometry.PointCloud.from_legacy_pointcloud(point_cloud)
-    return point_cloud_gpu
+    point_cloud_t = o3d.t.geometry.PointCloud.from_legacy_pointcloud(point_cloud)
+    return point_cloud_t
 
 
 def median_blur(image: np.ndarray, kernel_size: int = 5) -> np.ndarray:
-    """Median blur
+    """Median blur filtration
     
-    This function is 
+    This function is responsible for applying median filter on input
+    image using points from square neighborhood of size kernel_size.
+
+    NOTE: When kernel_size is 3 or 5, the image bit depth should be CV_8U, 
+    CV_16U, or CV_32F, for larger kernel sizes, it can only be CV_8U.
+
+    Args:
+        image: input image to be filtered (numpy.ndarray),
+        kernel_size: size of square neighborhood to be used for filtration
+
+    Returns:
+        filtered image with the size and dtype as the input image.
     """
-    depth_array_median = cv2.medianBlur(image, kernel_size)
-    return depth_array_median
+    array_median = cv2.medianBlur(image, kernel_size)
+    return array_median
 
 
 def create_point_cloud(color: np.ndarray, depth: np.ndarray, camera_info: dict):
     """Convert RGB and depth image to Open3D point cloud using camera intrinsic.
+
+    This function is responsible for creating Open3D point cloud using aligned 
+    color and depth image with camera intrinsic.
+
+    Args:
+        color: ndarray with color RGB image, dtype is UINT8 (numpy.ndarray),
+        depth: ndarray with depth value in millimeters, dtype is UINT16 (numpy.ndarray)
+        camera_info: intrinsic parameters for color images (i.e fx, fy, cx, cy, width, height)
+
+    Returns:
+        created point cloud (open3d.geometry.PointCloud)
     """
     rgbd_image = o3d.geometry.RGBDImage.create_from_color_and_depth(color=o3d.geometry.Image(color),
                                                                     depth=o3d.geometry.Image(depth),
@@ -273,14 +299,27 @@ def create_point_cloud(color: np.ndarray, depth: np.ndarray, camera_info: dict):
 
 if __name__ == '__main__':
     #########################################################
-    # User modifies path for dataset
-    BASE_DIR = '/home/avena/datasets/intel/dataset001'
-    intel_configuration_file = 'config/cam9_config.json'
-    voxel_size = 1 # millimeters
+    # Getting command line arguments from user
+    dir_default_path = os.path.dirname(os.path.abspath(__file__))
+    config_default_path = os.path.join(dir_default_path, 'config', 'cam9_config.json')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('base_dir', type=str, 
+                         help='absolute path to directory', nargs='?',
+                         default=f'{dir_default_path}')
+    parser.add_argument('configuration', type=str,
+                        help='path to camera configuration file', nargs='?',
+                        default=f'{config_default_path}')
+    parser.add_argument('voxel_size', type=float,
+                        help='voxel grid size in millimeters', nargs='?',
+                        default=1)
+    args = parser.parse_args()
+    base_dir = args.base_dir
+    intel_configuration_file = args.configuration
+    voxel_size = args.voxel_size
     #########################################################
 
     # Creating directory for images
-    os.makedirs(BASE_DIR, exist_ok=True)
+    os.makedirs(base_dir, exist_ok=True)
 
     # Open Intel camera
     intel_camera_handle, camera_info = open_intel_camera(intel_configuration_file)
@@ -323,9 +362,9 @@ if __name__ == '__main__':
 
             # Save images
             ts_now = time.time_ns()
-            print(f'Saving images to "{BASE_DIR}" directory')
-            cv2.imwrite(os.path.join(BASE_DIR, f'{ts_now}_depth.png'), depth_array)
-            cv2.imwrite(os.path.join(BASE_DIR, f'{ts_now}_color.png'), cv2.cvtColor(rgb_array, cv2.COLOR_RGB2BGR))
+            print(f'Saving images to "{base_dir}" directory')
+            cv2.imwrite(os.path.join(base_dir, f'{ts_now}_depth.png'), depth_array)
+            cv2.imwrite(os.path.join(base_dir, f'{ts_now}_color.png'), cv2.cvtColor(rgb_array, cv2.COLOR_RGB2BGR))
             print(f'Save images called {cnt} times')
             cnt += 1
             pressed_key = input('Pressed ENTER to make a photo (or "q" and then ENTER to exit): ')
