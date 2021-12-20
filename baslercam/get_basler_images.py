@@ -1,6 +1,8 @@
 import time
 import os
 import cv2
+from queue import Queue
+from threading import Thread
 from pypylon import pylon
 from pypylon import genicam
 
@@ -78,6 +80,20 @@ def get_images(cameras: pylon.InstantCameraArray):
     return images
 
 
+def save_images(q: Queue, base_path: str):
+    """
+    NOTE: Make sure to create directories for images
+    """
+    images, done = q.get(block=True)
+    while not done:
+        ts = time.time_ns()
+        for i, image in enumerate(images):
+            cv2.imwrite(os.path.join(base_path, f'camera_{i + 1}', f'{ts}_camera_{i + 1}.png'), image)
+        q.task_done()
+        images, done = q.get(block=True)
+    q.task_done()
+
+
 if __name__ == '__main__':
     ########################################################
     # User configuration
@@ -108,51 +124,54 @@ if __name__ == '__main__':
         input('Press ENTER to start grabbing images')
         print('Grabing images')
 
+        # Initialize directories for images
+        for i in range(cameras.GetSize()):
+            os.makedirs(os.path.join(base_path, 'background', f'camera_{i + 1}'), exist_ok=True)
+            os.makedirs(os.path.join(base_path, f'camera_{i + 1}'), exist_ok=True)
+
+        # Initialize saving to file on separate thread
+        q = Queue()
+        t = Thread(target=save_images, args=(q, base_path))
+        t.start()
+
         start_time = time.perf_counter()
-        cam_images = [None] * amount_of_photos
-        times = [None] * amount_of_photos
         cnt = 0
         while cnt < amount_of_photos:
             start_loop = time.perf_counter()
 
             # Read images from cameras
-            cam_images[cnt] = get_images(cameras)
+            images = get_images(cameras)
 
-            times[cnt] = time.time_ns()
-            end_loop = time.perf_counter()
+            # Send images 
+            q.put((images, False))
+
             cnt += 1
+            end_loop = time.perf_counter()
             elapsed_time = end_loop - start_loop
 
             # Wait remaining time
             time.sleep(time_between_photos - elapsed_time)
         print('Done grabbing')
 
+        # Send request to stop saving images
+        q.put((None, True))
+        t.join()
+        q.join()
+
         ################################################################
         # Saving background image
-        input('Please remove object from turntable and press ENTER')
+        input('Please remove object and press ENTER')
         bg_cam_images = get_images(cameras)
         
         print('Saving background images to files')
-        os.makedirs(os.path.join(base_path, 'background', 'camera_1'), exist_ok=True)
-        os.makedirs(os.path.join(base_path, 'background', 'camera_2'), exist_ok=True)
-        os.makedirs(os.path.join(base_path, 'background', 'camera_3'), exist_ok=True)
         ts = time.time_ns()
         for cam_id, bg_image in enumerate(bg_cam_images):
-            cv2.imwrite(os.path.join(base_path, 'background', f'camera_{cam_id + 1}', f'{ts}_camera_{cam_id + 1}.png'), bg_image)
-
-        ################################################################
-        # Saving images to file
-        print('Saving images to files')
-        os.makedirs(os.path.join(base_path, 'camera_1'), exist_ok=True)
-        os.makedirs(os.path.join(base_path, 'camera_2'), exist_ok=True)
-        os.makedirs(os.path.join(base_path, 'camera_3'), exist_ok=True)
-        for i, images in enumerate(cam_images):
-            for cam_id in range(cameras.GetSize()):
-                cv2.imwrite(os.path.join(base_path, f'camera_{cam_id + 1}', f'{times[i]}_camera_{cam_id + 1}.png'), images[cam_id])
-            
+            dir_path = os.path.join(base_path, 'background', f'camera_{cam_id + 1}')
+            os.makedirs(dir_path, exist_ok=True)
+            cv2.imwrite(os.path.join(dir_path, f'{ts}_camera_{cam_id + 1}.png'), bg_image)
+        
     except genicam.GenericException as e:
         print('[ERROR]:', e)
 
     cameras.Close()
     print('Cameras closed')
-
