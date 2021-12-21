@@ -1,66 +1,11 @@
 import time
 import os
+import json
 import cv2
 from queue import Queue
 from threading import Thread
 from pypylon import pylon
 from pypylon import genicam
-
-
-EXPOSURE_TIME_US = 5000
-EXPOSURE_TIME_MS = int(EXPOSURE_TIME_US / 1000)
-
-
-def configure_camera(camera: pylon.InstantCamera):
-    camera.DeviceLinkThroughputLimit.SetValue(320000000) # 37 fps
-
-    # print('\n'.join(dir(camera)))
-    # Set 4K resolution
-    camera.Width.SetValue(3840)
-    camera.Height.SetValue(2160)
-    camera.OffsetX.SetValue(0)
-    camera.OffsetY.SetValue(0)
-
-    # ROI
-    camera.AutoFunctionROISelector.SetValue("ROI1")
-    camera.AutoFunctionROIOffsetX.SetValue(0)
-    camera.AutoFunctionROIOffsetY.SetValue(0)
-    camera.AutoFunctionROIWidth.SetValue(camera.Width.GetValue())
-    camera.AutoFunctionROIHeight.SetValue(camera.Height.GetValue())
-    camera.AutoFunctionROIUseBrightness.SetValue(False)
-    camera.AutoFunctionROIUseWhiteBalance.SetValue(False)
-
-    camera.AutoFunctionROISelector.SetValue("ROI2")
-    camera.AutoFunctionROIOffsetX.SetValue(0)
-    camera.AutoFunctionROIOffsetY.SetValue(0)
-    camera.AutoFunctionROIWidth.SetValue(camera.Width.GetValue())
-    camera.AutoFunctionROIHeight.SetValue(camera.Height.GetValue())
-    camera.AutoFunctionROIUseBrightness.SetValue(False)
-    camera.AutoFunctionROIUseWhiteBalance.SetValue(False)
-
-    # Turn off all auto functions
-    camera.BalanceWhiteAuto.SetValue('Off')
-    camera.GainAuto.SetValue('Off')
-    camera.ExposureMode.SetValue('Timed')
-    camera.ExposureAuto.SetValue('Off')
-
-    # Gain value to minimum possible to not add noise
-    camera.Gain.SetValue(0)
-
-    # Set exposure time in microseconds
-    camera.ExposureTime.SetValue(EXPOSURE_TIME_US)
-
-    # Set pixel format for color
-    camera.PixelFormat.SetValue('BGR8')
-
-    # Configure triggers
-    camera.TriggerSelector.SetValue('FrameStart')
-    camera.TriggerMode.SetValue('On')
-    camera.TriggerSource.SetValue('Software')
-
-    # camera.RegisterConfiguration(pylon.SoftwareTriggerConfiguration(), 
-    #                              pylon.RegistrationMode_ReplaceAll,
-    #                              pylon.Cleanup_Delete)
 
 
 def get_images(cameras: pylon.InstantCameraArray):
@@ -72,11 +17,11 @@ def get_images(cameras: pylon.InstantCameraArray):
     images = [None] * cameras.GetSize()
     for i, camera in enumerate(cameras):
         grab_result = camera.RetrieveResult(5000, pylon.TimeoutHandling_ThrowException)
-
         if grab_result and grab_result.GrabSucceeded():
             images[i] = grab_result.GetArray()
         else:
             print(f'Failed retrieving result for {i + 1} camera')
+        grab_result.Release()
     return images
 
 
@@ -97,10 +42,16 @@ def save_images(q: Queue, base_path: str):
 if __name__ == '__main__':
     ########################################################
     # User configuration
-    base_path = '/home/avena/basler/dataset'
-    amount_of_photos = 37
-    time_between_photos = 0.903 # seconds
+    base_path = '/home/avena/basler/dataset_pepper_100'
+    amount_of_photos = 100
+    # Time for one revolution of turntable: 32.508 sec
+    # time_between_photos = 0.903 # seconds (for 36 images)
+    # time_between_photos = 0.5418 # seconds (for 60 images)
+    # time_between_photos = 0.32508 # seconds (for 100 images)
     ########################################################
+    
+    time_of_rotation = 32.508 # sec
+    time_between_photos = time_of_rotation / amount_of_photos
 
     try:
         tlfactory= pylon.TlFactory.GetInstance()
@@ -113,20 +64,25 @@ if __name__ == '__main__':
         for i, camera in enumerate(cameras):
             device: pylon.DeviceInfo = tlfactory.CreateDevice(devices[i])
             camera.Attach(device)
-            print("Using device:", camera.GetDeviceInfo().GetModelName())
 
         cameras.Open()
         for i, camera in enumerate(cameras):
-            configure_camera(camera)
+            dir_name = os.path.dirname(os.path.abspath(__file__))
+            camera_serial = camera.GetDeviceInfo().GetSerialNumber()
+            camera_model = camera_model = camera.GetDeviceInfo().GetModelName()
+            config_path = os.path.join(dir_name, 'config', f'{camera_model}_{camera_serial}.pfs')
+            pylon.FeaturePersistence.Load(config_path, camera.GetNodeMap(), True)
+
         print("Cameras are opened and configured")
 
-        cameras.StartGrabbing(pylon.GrabStrategy_OneByOne, pylon.GrabLoop_ProvidedByUser)
+        # raise RuntimeError('EXIT')
+        
         input('Press ENTER to start grabbing images')
         print('Grabing images')
+        cameras.StartGrabbing(pylon.GrabStrategy_OneByOne, pylon.GrabLoop_ProvidedByUser)
 
         # Initialize directories for images
         for i in range(cameras.GetSize()):
-            os.makedirs(os.path.join(base_path, 'background', f'camera_{i + 1}'), exist_ok=True)
             os.makedirs(os.path.join(base_path, f'camera_{i + 1}'), exist_ok=True)
 
         # Initialize saving to file on separate thread
@@ -137,6 +93,7 @@ if __name__ == '__main__':
         start_time = time.perf_counter()
         cnt = 0
         while cnt < amount_of_photos:
+            print(f'{cnt + 1} / {amount_of_photos}', end='\r')
             start_loop = time.perf_counter()
 
             # Read images from cameras
@@ -148,10 +105,10 @@ if __name__ == '__main__':
             cnt += 1
             end_loop = time.perf_counter()
             elapsed_time = end_loop - start_loop
-
+            
             # Wait remaining time
             time.sleep(time_between_photos - elapsed_time)
-        print('Done grabbing')
+        print('\nDone grabbing')
 
         # Send request to stop saving images
         q.put((None, True))
@@ -170,7 +127,7 @@ if __name__ == '__main__':
             os.makedirs(dir_path, exist_ok=True)
             cv2.imwrite(os.path.join(dir_path, f'{ts}_camera_{cam_id + 1}.png'), bg_image)
         
-    except genicam.GenericException as e:
+    except (genicam.GenericException, Exception) as e:
         print('[ERROR]:', e)
 
     cameras.Close()
