@@ -1,6 +1,6 @@
 import time
 import os
-import json
+import argparse
 import cv2
 from queue import Queue
 from threading import Thread
@@ -40,18 +40,27 @@ def save_images(q: Queue, base_path: str):
 
 
 if __name__ == '__main__':
-    ########################################################
-    # User configuration
-    base_path = '/home/avena/basler/dataset_pepper_100'
-    amount_of_photos = 100
-    # Time for one revolution of turntable: 32.508 sec
-    # time_between_photos = 0.903 # seconds (for 36 images)
-    # time_between_photos = 0.5418 # seconds (for 60 images)
-    # time_between_photos = 0.32508 # seconds (for 100 images)
-    ########################################################
-    
-    time_of_rotation = 32.508 # sec
+    #########################################################
+    # Getting command line arguments from user
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-d', '--base_dir', type=str, 
+                         help='absolute path to directory for images',
+                         default=f'{os.path.join(os.path.expanduser("~"), "dataset")}')
+    parser.add_argument('-t', '--time_of_rotation', type=float,
+                        help='amount of time (in seconds) one rotation of turntable takes',
+                        default=32.508)
+    parser.add_argument('-n', '--nr_photos', type=int,
+                        help='number of photos to save for each camera',
+                        default=36)
+    args = parser.parse_args()
+    base_path = args.base_dir
+    amount_of_photos = args.nr_photos
+    time_of_rotation = args.time_of_rotation
     time_between_photos = time_of_rotation / amount_of_photos
+    print(f'Saving images to "{base_path}" directory')
+    print(f'Amount of photos to take: {amount_of_photos}')
+    print(f'One rotation of turntable takes: {time_of_rotation} seconds')
+    #########################################################
 
     try:
         tlfactory= pylon.TlFactory.GetInstance()
@@ -75,8 +84,6 @@ if __name__ == '__main__':
 
         print("Cameras are opened and configured")
 
-        # raise RuntimeError('EXIT')
-        
         input('Press ENTER to start grabbing images')
         print('Grabing images')
         cameras.StartGrabbing(pylon.GrabStrategy_OneByOne, pylon.GrabLoop_ProvidedByUser)
