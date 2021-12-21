@@ -302,7 +302,7 @@ if __name__ == '__main__':
     # Getting command line arguments from user
     dir_default_path = os.path.dirname(os.path.abspath(__file__))
     config_default_path = os.path.join(dir_default_path, 'config', 'cam9_config.json')
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-d', '--base_dir', type=str, 
                          help='absolute path to directory', nargs='?',
                          default=f'{os.path.join(os.path.expanduser("~"), "dataset")}')

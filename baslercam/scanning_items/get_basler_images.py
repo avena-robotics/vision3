@@ -42,7 +42,7 @@ def save_images(q: Queue, base_path: str):
 if __name__ == '__main__':
     #########################################################
     # Getting command line arguments from user
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-d', '--base_dir', type=str, 
                          help='absolute path to directory for images',
                          default=f'{os.path.join(os.path.expanduser("~"), "dataset")}')
