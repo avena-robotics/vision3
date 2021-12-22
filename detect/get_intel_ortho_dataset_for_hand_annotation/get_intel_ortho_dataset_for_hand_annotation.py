@@ -343,6 +343,11 @@ if __name__ == '__main__':
             if color.size == 0 or depth.size == 0:
                 raise RuntimeError('Failed to get images. Reconnect cameras and run script again')
 
+            # Zero out pixels which are out of view (value read empirically)
+            cutoff_val = 238
+            color[:, :cutoff_val, :] = [0, 0, 0]
+            depth[:, :cutoff_val] = 0
+
             print('Filtering depth in Z axis')
             depth = trunc_depth(depth, 1500)
 
@@ -359,10 +364,12 @@ if __name__ == '__main__':
             rgb_array, depth_array = calculate_rgbd_orthophoto(points, colors, voxel_size)
 
             # Crop ortho view images
-            w_min = 50
+            w_min = 0
             w_max = w_min + 1000
-            rgb_array = rgb_array[:, w_min:w_max, :]
-            depth_array = depth_array[:, w_min:w_max]
+            h_min = 0
+            h_max = h_min + 720
+            rgb_array = rgb_array[h_min:h_max, w_min:w_max, :]
+            depth_array = depth_array[h_min:h_max, w_min:w_max]
 
             # Save images
             ts_now = time.time_ns()
