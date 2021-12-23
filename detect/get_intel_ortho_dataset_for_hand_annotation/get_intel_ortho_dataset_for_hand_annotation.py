@@ -298,6 +298,9 @@ def create_point_cloud(color: np.ndarray, depth: np.ndarray, camera_info: dict):
 
 
 if __name__ == '__main__':
+    WIDTH = 1000
+    HEIGHT = 720
+
     #########################################################
     # Getting command line arguments from user
     dir_default_path = os.path.dirname(os.path.abspath(__file__))
@@ -343,7 +346,7 @@ if __name__ == '__main__':
             if color.size == 0 or depth.size == 0:
                 raise RuntimeError('Failed to get images. Reconnect cameras and run script again')
 
-            # Zero out pixels which are out of view (value read empirically)
+            # NOTE: Zero out pixels which are out of view (value read empirically)
             cutoff_val = 238
             color[:, :cutoff_val, :] = [0, 0, 0]
             depth[:, :cutoff_val] = 0
@@ -358,19 +361,29 @@ if __name__ == '__main__':
             # Get copy of points and colors
             points = np.asarray(pcld.points)
             colors = np.asarray(pcld.colors)
-            
+
             # Calculate orthographic view
             print('Calculating orthographic view')
             rgb_array, depth_array = calculate_rgbd_orthophoto(points, colors, voxel_size)
 
             # Crop ortho view images
             w_min = 0
-            w_max = w_min + 1000
+            w_max = w_min + WIDTH
             h_min = 0
-            h_max = h_min + 720
+            h_max = h_min + HEIGHT
             rgb_array = rgb_array[h_min:h_max, w_min:w_max, :]
             depth_array = depth_array[h_min:h_max, w_min:w_max]
 
+            # Make sure that images are WIDTHxHEIGHT
+            # Sometimes because of noise, number of rows might
+            # be less than desired so here we are adding black lines
+            # so result resolution is always the same
+            rows_add = HEIGHT - rgb_array.shape[0]
+            color_rows = np.zeros((rows_add, rgb_array.shape[1], 3), dtype=rgb_array.dtype)
+            rgb_array = np.vstack((rgb_array, color_rows))
+            depth_rows = np.zeros((rows_add, depth_array.shape[1]), dtype=depth_array.dtype)
+            depth_array = np.vstack((depth_array, depth_rows))
+            
             # Save images
             ts_now = time.time_ns()
             print(f'Saving images to "{base_dir}" directory')
