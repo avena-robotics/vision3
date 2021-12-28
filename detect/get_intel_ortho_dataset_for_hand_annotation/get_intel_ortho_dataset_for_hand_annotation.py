@@ -1,130 +1,19 @@
 from typing import Tuple
 import argparse
-import json
 import time
 import numpy as np
 import os
 import cv2
 import open3d as o3d
-import pyrealsense2 as rs
 from numba import jit
-import matplotlib.pyplot as plt
+import sys
 
-
-def open_intel_camera(config_filename: str):
-    """Opens Intel Realsense camera.
-
-    This function is responsible for opening Intel Realsense camera 
-    with provided path to configuration file which consists serial number,
-    resolutions for depth and color, framerates and laser power.
-
-    Args:
-        config_filename: path to configuration file
-    
-    Returns:
-        Tuple with 2 elements:
-            - handle to opened camera,
-            - dictionary with intrinsic parameters of color sensor (i.e. fx, fy, cx, cy, width, height)
-    """
-    camera_settings = json.load(open(config_filename))
-    camera_serial = camera_settings["serial_number"]
-    camera_config = rs.config()
-    camera_config.enable_stream(rs.stream.depth, int(camera_settings["stream-depth-width"]),
-                                int(camera_settings["stream-depth-height"]), rs.format.z16,
-                                int(camera_settings["stream-depth-fps"]))
-    camera_config.enable_stream(rs.stream.color, int(camera_settings["stream-color-width"]),
-                                int(camera_settings["stream-color-height"]), rs.format.rgb8,
-                                int(camera_settings["stream-color-fps"]))
-    camera_config.enable_device(camera_serial)
-    camera_handle = rs.pipeline()
-    camera_pipeline_profile = camera_handle.start(camera_config)
-    camera_device = camera_pipeline_profile.get_device()
-    sensors = camera_device.query_sensors()
-    for sensor in sensors:
-        if rs.sensor.as_depth_sensor(sensor):
-            sensor.set_option(rs.option.emitter_enabled, 1)
-            sensor.set_option(rs.option.laser_power, int(camera_settings["controls-laserpower"]))
-            sensor.set_option(rs.option.enable_auto_exposure, 1)
-
-        elif rs.sensor.as_color_sensor(sensor):
-            sensor.set_option(rs.option.enable_auto_exposure, 1)
-            sensor.set_option(rs.option.enable_auto_white_balance, 1)
-
-    # Read intrinsic
-    camera_pipeline_profile = camera_handle.get_active_profile()
-    color_profile = camera_pipeline_profile.get_stream(rs.stream.color)
-    color_intrinsic = color_profile.as_video_stream_profile().get_intrinsics()
-
-    print('Waiting for a few seconds to start camera...')
-    time.sleep(2)
-
-    return camera_handle, {"fx": color_intrinsic.fx, "fy": color_intrinsic.fy, 
-                           "cx": color_intrinsic.ppx, "cy": color_intrinsic.ppy, 
-                           "height": color_intrinsic.height, "width": color_intrinsic.width}
-
-
-def get_intel_all_images(camera_handle) -> Tuple[np.ndarray, np.ndarray]:
-    """Reads last from Intel camera.
-    
-    This function is responsible for reading last color and depth 
-    frame in which depth is aligned to color frame. Color is RGB 
-    where each channel is in range [0; 255] and depth is distance
-    in millimeters.
-
-    Args:
-        camera_handle: handle to Intel camera (it is assumed that camera is opened)
-
-    Returns:
-        Tuple with 2 elements:
-            - color array: each channel is in [0; 255] range (np.ndarray),
-            - depth array: distance in millimeters (np.ndarray)
-    """
-    # Aligner for depth to color
-    align_to = rs.stream.color
-    aligner = rs.align(align_to)
-    # Wait for synchronized color and depth frames
-    frames = camera_handle.wait_for_frames(timeout_ms=2000)
-    # Align depth to color frame
-    aligned_frames = aligner.process(frames)
-    # Depth
-    depth_frame = aligned_frames.get_depth_frame()
-    # Temporal filter
-    temporal_filter = rs.temporal_filter()
-    filter_smooth_alpha = rs.option.filter_smooth_alpha
-    filter_smooth_delta = rs.option.filter_smooth_delta
-    temporal_smooth_alpha = 0.03
-    temporal_smooth_delta = 60
-    temporal_filter.set_option(filter_smooth_alpha, temporal_smooth_alpha)
-    temporal_filter.set_option(filter_smooth_delta, temporal_smooth_delta)
-    # Spatial filter
-    spatial_filter = rs.spatial_filter()
-    filter_magnitude = rs.option.filter_magnitude
-    spatial_magnitude = 2
-    spatial_smooth_alpha = 0.5
-    spatial_smooth_delta = 1
-    spatial_filter.set_option(filter_smooth_alpha, spatial_smooth_alpha)
-    spatial_filter.set_option(filter_smooth_delta, spatial_smooth_delta)
-    spatial_filter.set_option(filter_magnitude, spatial_magnitude)
-    # Process depth with filters
-    depth_frame = temporal_filter.process(depth_frame)
-    # depth_frame = spatial_filter.process(depth_frame)
-    depth_image = np.asanyarray(depth_frame.get_data())
-    # Color
-    color_frame = aligned_frames.get_color_frame()
-    color_image = np.asanyarray(color_frame.get_data())
-    return color_image, depth_image
-
-
-def close_intel_camera(camera_handle):
-    """Closes Intel Realsense camera.
-    
-    This function is responsible for closing camera 
-    to stop streaming data.
-
-    Args:
-        camera_handle: handler for camera which is used also to get images
-    """
-    camera_handle.stop()
+# NOTE: This path is assuming that system was setup  
+# according to documentation
+sys.path.append(os.path.join(os.path.expanduser('~'), 'vision3'))
+from intelcam.open_intel_camera import open_intel_camera
+from intelcam.close_intel_camera import close_intel_camera
+from intelcam.get_intel_all_images import get_intel_all_images
 
 
 @jit(parallel=True, fastmath=True)
@@ -303,8 +192,8 @@ if __name__ == '__main__':
 
     #########################################################
     # Getting command line arguments from user
-    dir_default_path = os.path.dirname(os.path.abspath(__file__))
-    config_default_path = os.path.join(dir_default_path, 'config', 'cam9_config.json')
+    # dir_default_path = os.path.dirname(os.path.abspath(__file__))
+    config_default_path = os.path.join(os.path.expanduser("~"), 'vision3', 'intelcam', 'config', 'cam9_config.json')
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-d', '--base_dir', type=str, 
                          help='absolute path to directory', nargs='?',
