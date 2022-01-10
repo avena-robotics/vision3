@@ -1,10 +1,4 @@
 #!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
-
-# Import necessary packages
 import glob
 import numpy as np
 import cv2
@@ -14,30 +8,6 @@ import json
 from scipy.spatial.transform import Rotation as R
 
 
-# In[2]:
-
-
-# Configuration
-path_to_folder = '/home/avena/dataset001'
-output_file = 'basler_calibration.json'
-acceptance_threshold = 60  # minimal number of detected markers 
-                           # on each image when calibrating in stereo
-
-# Aruco dictionary definition 
-aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_5X5_250)
-
-# Charuco board definition
-board = cv2.aruco.CharucoBoard_create(squaresX=12, 
-                                      squaresY=9, 
-                                      squareLength=0.06,  # meters 
-                                      markerLength=0.047, # meters
-                                      dictionary=aruco_dict)
-
-
-# In[3]:
-
-
-# Execute script
 def analyze_charuco(images, aruco_dict, board):
     """Detect Charuco corners.
     
@@ -191,7 +161,8 @@ def calibrate_stereo_camera(all_corners_l, all_ids_l, all_corners_r, all_ids_r, 
     
     if len(left_corners_sampled) == 0 or len(right_corners_sampled) == 0:
         raise RuntimeError('Not enough common samples when calibrating stereo. '
-                           'Try decreasing "acceptance_threshold" parameter')
+                           'Try decreasing "acceptance_threshold" parameter. '
+                           f'Current value {acceptance_threshold}.')
     
     ret_val = cv2.stereoCalibrate(
         obj_pts, left_corners_sampled, right_corners_sampled,
@@ -246,185 +217,203 @@ def calc_rectification_maps(left_cam_mat, left_dist_coeffs,
                                                                                  )
     return R_left, R_right, P_left, P_right, Q
 
-# Draw CHARUCO board model
-plt.figure(figsize=(15, 10))
-plt.title('Charuco board')
-plt.imshow(board.draw((1280, 720)), cmap='gray')
-plt.axis('off')
-plt.show()
 
-# Load images paths
-left_mono_imgs_paths = sorted(glob.glob(os.path.join(path_to_folder, '*_left_mono.png')))
-right_mono_imgs_paths = sorted(glob.glob(os.path.join(path_to_folder, '*_right_mono.png')))
-color_imgs_paths = sorted(glob.glob(os.path.join(path_to_folder, '*_color.png')))
+if __name__ == '__main__':
+    # Configuration
+    path_to_folder = '/home/avena/dataset001'
+    output_file = 'basler_calibration.json'
+    acceptance_threshold = 60  # minimal number of detected markers 
+                            # on each image when calibrating in stereo
 
-# Detect Charuco markers for each camera
-print('Detecting Charuco corners on left mono images')
-left_mono_corners, left_mono_corners_ids, imsize =                 analyze_charuco(left_mono_imgs_paths, aruco_dict, board)
-print('Detecting Charuco corners on right mono images')
-right_mono_corners, right_mono_corners_ids, imsize =                 analyze_charuco(right_mono_imgs_paths, aruco_dict, board)
-print('Detecting Charuco corners on color images')
-color_corners, color_corners_ids, imsize =                 analyze_charuco(color_imgs_paths, aruco_dict, board)
+    # Aruco dictionary definition 
+    aruco_dict = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_5X5_250)
 
-# Sample image with corners drawn for each camera
-img = cv2.imread(left_mono_imgs_paths[0])
-img_corners = cv2.aruco.drawDetectedCornersCharuco(img, left_mono_corners[0], 
-                                                   left_mono_corners_ids[0])
-plt.figure(figsize=(10, 15))
-plt.title('Sample image with drawn detected markers')
-plt.imshow(img_corners)
-plt.axis('off')
-plt.show()
+    # Charuco board definition
+    board = cv2.aruco.CharucoBoard_create(squaresX=12, 
+                                        squaresY=9, 
+                                        squareLength=0.06,  # meters 
+                                        markerLength=0.047, # meters
+                                        dictionary=aruco_dict)
 
-# Calibrate camera using detected corners for each camera
-print('Calibrate left mono camera')
-left_mono_repr_err, left_mono_cam_mat, left_mono_dist_coeff =             calibrate_camera(left_mono_corners, left_mono_corners_ids, imsize)
-print('Calibrate right mono camera')
-right_mono_repr_err, right_mono_cam_mat, right_mono_dist_coeff =             calibrate_camera(right_mono_corners, right_mono_corners_ids, imsize)
-print('Calibrate color camera')
-color_repr_err, color_cam_mat, color_dist_coeff =             calibrate_camera(color_corners, color_corners_ids, imsize)
+    # Draw CHARUCO board model
+    plt.figure(figsize=(15, 10))
+    plt.title('Charuco board')
+    plt.imshow(board.draw((1280, 720)), cmap='gray')
+    plt.axis('off')
+    plt.show()
 
-print('\nLeft mono reprojection error:', left_mono_repr_err)
-print('\nRight mono reprojection error:', right_mono_repr_err)
-print('\nColor reprojection error:', color_repr_err)
-print('\nLeft mono distortion coefficients:', left_mono_dist_coeff, sep='\n')
-print('\nRight mono distortion coefficients:', right_mono_dist_coeff, sep='\n')
-print('\nColor distortion coefficients:', color_dist_coeff, sep='\n')
+    # Load images paths
+    left_mono_imgs_paths = sorted(glob.glob(os.path.join(path_to_folder, '*_left_mono.png')))
+    right_mono_imgs_paths = sorted(glob.glob(os.path.join(path_to_folder, '*_right_mono.png')))
+    color_imgs_paths = sorted(glob.glob(os.path.join(path_to_folder, '*_color.png')))
 
-# Calibrate stereo between left and right mono camera
-print('Calibrate left mono to right mono cameras')
-repr_erro_l_r, rot_l_r, trans_l_r =             calibrate_stereo_camera(left_mono_corners, left_mono_corners_ids, 
-                                    right_mono_corners, right_mono_corners_ids,
-                                    imsize, left_mono_cam_mat, left_mono_dist_coeff, 
-                                    right_mono_cam_mat, right_mono_dist_coeff,
-                                    board, acceptance_threshold=acceptance_threshold)
+    # Detect Charuco markers for each camera
+    print('Detecting Charuco corners on left mono images')
+    left_mono_corners, left_mono_corners_ids, imsize =                 analyze_charuco(left_mono_imgs_paths, aruco_dict, board)
+    print('Detecting Charuco corners on right mono images')
+    right_mono_corners, right_mono_corners_ids, imsize =                 analyze_charuco(right_mono_imgs_paths, aruco_dict, board)
+    print('Detecting Charuco corners on color images')
+    color_corners, color_corners_ids, imsize =                 analyze_charuco(color_imgs_paths, aruco_dict, board)
 
-# Calibrate stereo between left and color
-print('Calibrate left mono to color cameras')
-repr_erro_l_color, rot_l_color, trans_l_color =             calibrate_stereo_camera(left_mono_corners, left_mono_corners_ids, 
-                                    color_corners, color_corners_ids,
-                                    imsize, left_mono_cam_mat, left_mono_dist_coeff, 
-                                    color_cam_mat, color_dist_coeff,
-                                    board, acceptance_threshold=acceptance_threshold)
+    # Sample image with corners drawn for each camera
+    img = cv2.imread(left_mono_imgs_paths[0])
+    img_corners = cv2.aruco.drawDetectedCornersCharuco(img, left_mono_corners[0], 
+                                                    left_mono_corners_ids[0])
+    plt.figure(figsize=(10, 15))
+    plt.title('Sample image with drawn detected markers')
+    plt.imshow(img_corners)
+    plt.axis('off')
+    plt.show()
 
-with np.printoptions(suppress=True):
-    print('\nLeft mono camera matrix:', left_mono_cam_mat, sep='\n')
-    print('\nRight mono camera matrix:', right_mono_cam_mat, sep='\n')
-    print('\nColor camera matrix:', color_cam_mat, sep='\n')
+    # Calibrate camera using detected corners for each camera
+    print('Calibrate left mono camera')
+    left_mono_repr_err, left_mono_cam_mat, left_mono_dist_coeff =             calibrate_camera(left_mono_corners, left_mono_corners_ids, imsize)
+    print('Calibrate right mono camera')
+    right_mono_repr_err, right_mono_cam_mat, right_mono_dist_coeff =             calibrate_camera(right_mono_corners, right_mono_corners_ids, imsize)
+    print('Calibrate color camera')
+    color_repr_err, color_cam_mat, color_dist_coeff =             calibrate_camera(color_corners, color_corners_ids, imsize)
 
-print('Calculate rectification map for left mono to right mono')
-R_left_l_r, R_right_l_r, P_left_l_r, P_right_l_r, Q_l_r = calc_rectification_maps(left_mono_cam_mat, left_mono_dist_coeff, 
-                                                                                  right_mono_cam_mat, right_mono_dist_coeff,
-                                                                                  rot_l_r, trans_l_r, imsize)
+    print('\nLeft mono reprojection error:', left_mono_repr_err)
+    print('\nRight mono reprojection error:', right_mono_repr_err)
+    print('\nColor reprojection error:', color_repr_err)
+    print('\nLeft mono distortion coefficients:', left_mono_dist_coeff, sep='\n')
+    print('\nRight mono distortion coefficients:', right_mono_dist_coeff, sep='\n')
+    print('\nColor distortion coefficients:', color_dist_coeff, sep='\n')
 
-print('Calculate rectification map for left mono to color')
-R_left_l_color, R_right_l_color, P_left_l_color, P_right_l_color, Q_l_color = calc_rectification_maps(left_mono_cam_mat, left_mono_dist_coeff, 
-                                                                                                      color_cam_mat, color_dist_coeff,
-                                                                                                      rot_l_color, trans_l_color, imsize)
-        
-# Save calibration results to file
-left_mono_intrinsic = {"fx": left_mono_cam_mat[0][0],
-                       "fy": left_mono_cam_mat[1][1],
-                       "cx": left_mono_cam_mat[0][2],
-                       "cy": left_mono_cam_mat[1][2],
-                       "k1": left_mono_dist_coeff[0][0],
-                       "k2": left_mono_dist_coeff[1][0],
-                       "p1": left_mono_dist_coeff[2][0],
-                       "p2": left_mono_dist_coeff[3][0],
-                       "k3": left_mono_dist_coeff[4][0],
-                       "width": imsize[0],
-                       "height": imsize[1]}
+    # Calibrate stereo between left and right mono camera
+    print('Calibrate left mono to right mono cameras')
+    repr_erro_l_r, rot_l_r, trans_l_r =             calibrate_stereo_camera(left_mono_corners, left_mono_corners_ids, 
+                                        right_mono_corners, right_mono_corners_ids,
+                                        imsize, left_mono_cam_mat, left_mono_dist_coeff, 
+                                        right_mono_cam_mat, right_mono_dist_coeff,
+                                        board, acceptance_threshold=acceptance_threshold)
 
-right_mono_intrinsic = {"fx": right_mono_cam_mat[0][0],
-                        "fy": right_mono_cam_mat[1][1],
-                        "cx": right_mono_cam_mat[0][2],
-                        "cy": right_mono_cam_mat[1][2],
-                        "k1": right_mono_dist_coeff[0][0],
-                        "k2": right_mono_dist_coeff[1][0],
-                        "p1": right_mono_dist_coeff[2][0],
-                        "p2": right_mono_dist_coeff[3][0],
-                        "k3": right_mono_dist_coeff[4][0],
+    # Calibrate stereo between left and color
+    print('Calibrate left mono to color cameras')
+    repr_erro_l_color, rot_l_color, trans_l_color =             calibrate_stereo_camera(left_mono_corners, left_mono_corners_ids, 
+                                        color_corners, color_corners_ids,
+                                        imsize, left_mono_cam_mat, left_mono_dist_coeff, 
+                                        color_cam_mat, color_dist_coeff,
+                                        board, acceptance_threshold=acceptance_threshold)
+
+    with np.printoptions(suppress=True):
+        print('\nLeft mono camera matrix:', left_mono_cam_mat, sep='\n')
+        print('\nRight mono camera matrix:', right_mono_cam_mat, sep='\n')
+        print('\nColor camera matrix:', color_cam_mat, sep='\n')
+
+    print('Calculate rectification map for left mono to right mono')
+    R_left_l_r, R_right_l_r, P_left_l_r, P_right_l_r, Q_l_r = calc_rectification_maps(left_mono_cam_mat, left_mono_dist_coeff, 
+                                                                                    right_mono_cam_mat, right_mono_dist_coeff,
+                                                                                    rot_l_r, trans_l_r, imsize)
+
+    print('Calculate rectification map for left mono to color')
+    R_left_l_color, R_right_l_color, P_left_l_color, P_right_l_color, Q_l_color = calc_rectification_maps(left_mono_cam_mat, left_mono_dist_coeff, 
+                                                                                                        color_cam_mat, color_dist_coeff,
+                                                                                                        rot_l_color, trans_l_color, imsize)
+            
+    # Save calibration results to file
+    left_mono_intrinsic = {"fx": left_mono_cam_mat[0][0],
+                        "fy": left_mono_cam_mat[1][1],
+                        "cx": left_mono_cam_mat[0][2],
+                        "cy": left_mono_cam_mat[1][2],
+                        "k1": left_mono_dist_coeff[0][0],
+                        "k2": left_mono_dist_coeff[1][0],
+                        "p1": left_mono_dist_coeff[2][0],
+                        "p2": left_mono_dist_coeff[3][0],
+                        "k3": left_mono_dist_coeff[4][0],
                         "width": imsize[0],
                         "height": imsize[1]}
 
-color_intrinsic = {"fx": color_cam_mat[0][0],
-                   "fy": color_cam_mat[1][1],
-                   "cx": color_cam_mat[0][2],
-                   "cy": color_cam_mat[1][2],
-                   "k1": color_dist_coeff[0][0],
-                   "k2": color_dist_coeff[1][0],
-                   "p1": color_dist_coeff[2][0],
-                   "p2": color_dist_coeff[3][0],
-                   "k3": color_dist_coeff[4][0],
-                   "width": imsize[0],
-                   "height": imsize[1]}
+    right_mono_intrinsic = {"fx": right_mono_cam_mat[0][0],
+                            "fy": right_mono_cam_mat[1][1],
+                            "cx": right_mono_cam_mat[0][2],
+                            "cy": right_mono_cam_mat[1][2],
+                            "k1": right_mono_dist_coeff[0][0],
+                            "k2": right_mono_dist_coeff[1][0],
+                            "p1": right_mono_dist_coeff[2][0],
+                            "p2": right_mono_dist_coeff[3][0],
+                            "k3": right_mono_dist_coeff[4][0],
+                            "width": imsize[0],
+                            "height": imsize[1]}
 
-# Left mono to right mono
-rotation = R.from_matrix(rot_l_r)
-quat1 = rotation.as_quat()
-left_mono_to_right_mono_extrinsic = {"T": {"x": trans_l_r[0][0],
-                                           "y": trans_l_r[1][0],
-                                           "z": trans_l_r[2][0]},
-                                     "R": {"x": quat1[0],
-                                           "y": quat1[1],
-                                           "z": quat1[2],
-                                           "w": quat1[3]},
-                                     "parent": "left_mono",
-                                     "child": "right_mono"}
-print('\nLeft mono to right mono transform:', json.dumps(left_mono_to_right_mono_extrinsic, indent=4), sep='\n')
+    color_intrinsic = {"fx": color_cam_mat[0][0],
+                    "fy": color_cam_mat[1][1],
+                    "cx": color_cam_mat[0][2],
+                    "cy": color_cam_mat[1][2],
+                    "k1": color_dist_coeff[0][0],
+                    "k2": color_dist_coeff[1][0],
+                    "p1": color_dist_coeff[2][0],
+                    "p2": color_dist_coeff[3][0],
+                    "k3": color_dist_coeff[4][0],
+                    "width": imsize[0],
+                    "height": imsize[1]}
 
-# Left mono to color
-rotation = R.from_matrix(rot_l_color)
-quat1 = rotation.as_quat()
-left_mono_to_color_extrinsic = {"T": {"x": trans_l_color[0][0],
-                                      "y": trans_l_color[1][0],
-                                      "z": trans_l_color[2][0]},
-                                "R": {"x": quat1[0],
-                                      "y": quat1[1],
-                                      "z": quat1[2],
-                                      "w": quat1[3]},
-                                "parent": "left_mono",
-                                "child": "color"}
-print('\nLeft mono to color transform:', json.dumps(left_mono_to_color_extrinsic, indent=4), sep='\n')
+    # Left mono to right mono
+    rotation = R.from_matrix(rot_l_r)
+    quat1 = rotation.as_quat()
+    left_mono_to_right_mono_extrinsic = {"T": {"x": trans_l_r[0][0],
+                                            "y": trans_l_r[1][0],
+                                            "z": trans_l_r[2][0]},
+                                        "R": {"x": quat1[0],
+                                            "y": quat1[1],
+                                            "z": quat1[2],
+                                            "w": quat1[3]},
+                                        "parent": "left_mono",
+                                        "child": "right_mono"}
+    print('\nLeft mono to right mono transform:', json.dumps(left_mono_to_right_mono_extrinsic, indent=4), sep='\n')
 
-# Rectification left mono to right mono
-rect_left_mono_to_right_mono = {'R_left': R_left_l_r.tolist(),
-                                'R_right': R_right_l_r.tolist(),
-                                'P_left': P_left_l_r.tolist(),
-                                'P_right': P_right_l_r.tolist(),
-                                'Q': Q_l_r.tolist(),
-                                "first_cam": "left_mono",
-                                "second_cam": "right_mono"}
+    # Left mono to color
+    rotation = R.from_matrix(rot_l_color)
+    quat1 = rotation.as_quat()
+    left_mono_to_color_extrinsic = {"T": {"x": trans_l_color[0][0],
+                                        "y": trans_l_color[1][0],
+                                        "z": trans_l_color[2][0]},
+                                    "R": {"x": quat1[0],
+                                        "y": quat1[1],
+                                        "z": quat1[2],
+                                        "w": quat1[3]},
+                                    "parent": "left_mono",
+                                    "child": "color"}
+    print('\nLeft mono to color transform:', json.dumps(left_mono_to_color_extrinsic, indent=4), sep='\n')
 
-# Rectification left mono to color
-rect_left_mono_to_color = {'R_left': R_left_l_color.tolist(),
-                           'R_right': R_right_l_color.tolist(),
-                           'P_left': P_left_l_color.tolist(),
-                           'P_right': P_right_l_color.tolist(),
-                           'Q': Q_l_color.tolist(),
-                           'first_cam': 'left_mono',
-                           'second_cam': 'color'}
+    # Rectification left mono to right mono
+    rect_left_mono_to_right_mono = {'R_left': R_left_l_r.tolist(),
+                                    'R_right': R_right_l_r.tolist(),
+                                    'P_left': P_left_l_r.tolist(),
+                                    'P_right': P_right_l_r.tolist(),
+                                    'Q': Q_l_r.tolist(),
+                                    "first_cam": "left_mono",
+                                    "second_cam": "right_mono"}
+
+    # Rectification left mono to color
+    rect_left_mono_to_color = {'R_left': R_left_l_color.tolist(),
+                            'R_right': R_right_l_color.tolist(),
+                            'P_left': P_left_l_color.tolist(),
+                            'P_right': P_right_l_color.tolist(),
+                            'Q': Q_l_color.tolist(),
+                            'first_cam': 'left_mono',
+                            'second_cam': 'color'}
 
 
-output_json = {
-    "intrinsic": 
-    {
-        "left_mono": left_mono_intrinsic, 
-        "right_mono": right_mono_intrinsic,
-        "color": color_intrinsic,
-    },
-    "extrinsic": 
-    [
-        left_mono_to_right_mono_extrinsic, 
-        left_mono_to_color_extrinsic,
-    ],
-    'rect':
-    [
-        rect_left_mono_to_right_mono,
-        rect_left_mono_to_color
-    ],
-}
+    output_json = {
+        "intrinsic": 
+        {
+            "left_mono": left_mono_intrinsic, 
+            "right_mono": right_mono_intrinsic,
+            "color": color_intrinsic,
+        },
+        "extrinsic": 
+        [
+            left_mono_to_right_mono_extrinsic, 
+            left_mono_to_color_extrinsic,
+        ],
+        'rect':
+        [
+            rect_left_mono_to_right_mono,
+            rect_left_mono_to_color
+        ],
+    }
 
-with open(output_file, 'w') as f:
-    json.dump(output_json, f, indent=4)
-print(f'Calibration parameters save to: "{output_file}"')
+    with open(output_file, 'w') as f:
+        json.dump(output_json, f, indent=4)
+    print(f'Calibration parameters save to: "{output_file}"')
