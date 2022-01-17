@@ -77,7 +77,7 @@ def get_intel_all_images(camera_handle, num_of_frames: int = 10) -> Tuple[np.nda
     color_frame = aligned_frames.get_color_frame()
     color_image = np.asanyarray(color_frame.get_data())
 
-    print(help(type(disparity_frame.get_data())))
+    # print(help(type(disparity_frame.get_data())))
 
     # disparity_frame = np.ascontiguousarray(disparity_frame.get_data(), dtype=np.float32)
     # print(disparity_frame.dtype)
