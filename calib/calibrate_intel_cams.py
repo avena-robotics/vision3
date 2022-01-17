@@ -46,7 +46,6 @@ if __name__ == '__main__':
                                             markerLength=0.047, # meters
                                             dictionary=aruco_dict)
 
-
         # Detect Charuco markers for each camera
         print(f'Detecting Charuco corners on cam {args.cam0} images')
         cam0_corners, cam0_corners_ids, imsize = analyze_charuco(cam0_imgs_paths, aruco_dict, board)
@@ -84,6 +83,6 @@ if __name__ == '__main__':
         calib_file_path = f'charuco_calibration_cam{args.cam1}_to_cam{args.cam0}.json'
         print(f'Saving calibration to "{calib_file_path}"')
         with open(calib_file_path, 'w') as f:
-            json.dump(transform0.tolist(), f)
+            json.dump(transform0.tolist(), f, indent=3)
     except Exception as e:
         print(f'[ERROR]:', e)

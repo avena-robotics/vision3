@@ -172,54 +172,24 @@ if __name__ == '__main__':
         cam5_color_frames, cam5_depth_frames = get_rgbd_images(cam5_handle, nr_frames)
 
         # Transform
-        tf_0_to_4 = np.array(json.load(open("calib/local_calibration_cam0_to_cam4.json")))
-        tf_1_to_4 = np.array(json.load(open("calib/local_calibration_cam1_to_cam4.json")))
-        tf_2_to_4 = np.array(json.load(open("calib/local_calibration_cam2_to_cam4.json")))
-        tf_3_to_4 = np.array(json.load(open("calib/local_calibration_cam3_to_cam4.json")))
-        tf_5_to_4 = np.array(json.load(open("calib/local_calibration_cam5_to_cam4.json")))
-
-        # tf_0_to_4 = np.array(json.load(open("calib/charuco_calibration_cam0_to_cam4.json")))
-        # tf_1_to_4 = np.array(json.load(open("calib/charuco_calibration_cam1_to_cam4.json")))
-        # tf_2_to_4 = np.array(json.load(open("calib/charuco_calibration_cam2_to_cam4.json")))
-        # tf_3_to_4 = np.array(json.load(open("calib/charuco_calibration_cam3_to_cam4.json")))
-        # tf_5_to_4 = np.array(json.load(open("calib/charuco_calibration_cam5_to_cam4.json")))
+        tf_0_to_3 = np.array(json.load(open("calib/local_calibration_cam0_to_cam3.json")))
+        tf_1_to_3 = np.array(json.load(open("calib/local_calibration_cam1_to_cam3.json")))
+        tf_2_to_3 = np.array(json.load(open("calib/local_calibration_cam2_to_cam3.json")))
+        tf_4_to_3 = np.array(json.load(open("calib/local_calibration_cam4_to_cam3.json")))
+        tf_5_to_3 = np.array(json.load(open("calib/local_calibration_cam5_to_cam3.json")))
+        tf_3_to_3 = np.identity(4)
         
         scene_point_cloud = tsdf_scene_cloud([cam4_color_frames, cam0_color_frames, cam1_color_frames, cam2_color_frames, cam3_color_frames, cam5_color_frames],
                                              [cam4_depth_frames, cam0_depth_frames, cam1_depth_frames, cam2_depth_frames, cam3_depth_frames, cam5_depth_frames],
                                              [cam4_info,         cam0_info,         cam1_info,         cam2_info,         cam3_info,         cam5_info],
-                                             [np.identity(4), tf_0_to_4, tf_1_to_4, tf_2_to_4, tf_3_to_4, tf_5_to_4],
+                                             [tf_4_to_3,         tf_0_to_3,         tf_1_to_3,         tf_2_to_3,         tf_3_to_3,         tf_5_to_3],
                                              device)
-
-        # scene_point_cloud = tsdf_scene_cloud([ cam0_color_frames,  cam2_color_frames, ],
-        #                                      [ cam0_depth_frames,  cam2_depth_frames, ],
-        #                                      [ cam0_info,          cam2_info,         ],
-        #                                      [ tf_0_to_4,          tf_2_to_4,         ],
+        # scene_point_cloud = tsdf_scene_cloud([ cam0_color_frames],
+        #                                      [ cam0_depth_frames],
+        #                                      [         cam0_info],
+        #                                      [         tf_0_to_3],
         #                                      device)
-
-        # scene_point_cloud0 = tsdf_scene_cloud([cam0_color_frames, ],
-        #                                      [cam0_depth_frames, ],
-        #                                      [cam0_info,         ],
-        #                                      [tf_0_to_4],
-        #                                      device)
-        # scene_point_cloud1 = tsdf_scene_cloud([cam1_color_frames, ],
-        #                                      [cam1_depth_frames, ],
-        #                                      [cam1_info,         ],
-        #                                      [tf_1_to_4],
-        #                                      device)
-        # scene_point_cloud2 = tsdf_scene_cloud([cam2_color_frames, ],
-        #                                      [cam2_depth_frames, ],
-        #                                      [cam2_info,         ],
-        #                                      [tf_2_to_4],
-        #                                      device)
-        # scene_point_cloud3 = tsdf_scene_cloud([cam3_color_frames, ],
-        #                                      [cam3_depth_frames, ],
-        #                                      [cam3_info,         ],
-        #                                      [tf_3_to_4],
-        #                                      device)
-        # scene_point_cloud = scene_point_cloud0 + scene_point_cloud1 + scene_point_cloud2 + scene_point_cloud3
-
-        # tf_to_table = np.array(json.load(open('calib/calibration_cam4_to_table.json')))
-
+        # tf_to_table = np.array(json.load(open('calib/calibration_cam2_to_table.json')))
         # scene_point_cloud = scene_point_cloud.transform(np.linalg.inv(tf_to_table))
 
         #############################################################
@@ -238,11 +208,11 @@ if __name__ == '__main__':
         rgb_array, depth_array = calculate_rgbd_orthophoto(points, colors, 1)
         
         #############################################################
-        plt.figure()
-        plt.imshow(rgb_array)
-        plt.figure()
-        plt.imshow(depth_array)
-        plt.show()
+        # plt.figure()
+        # plt.imshow(rgb_array)
+        # plt.figure()
+        # plt.imshow(depth_array)
+        # plt.show()
 
         cv2.imwrite(f'{ts}_color.png', cv2.cvtColor(rgb_array, cv2.COLOR_RGB2BGR))
         cv2.imwrite(f'{ts}_depth_colormap.png', colormap_image(depth_array))
@@ -256,5 +226,8 @@ if __name__ == '__main__':
         print('[ERROR]:', e)
 
     close_intel_camera(cam0_handle)
-    # close_intel_camera(cam1_handle)
+    close_intel_camera(cam1_handle)
     close_intel_camera(cam2_handle)
+    close_intel_camera(cam3_handle)
+    close_intel_camera(cam4_handle)
+    close_intel_camera(cam5_handle)

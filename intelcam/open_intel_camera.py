@@ -31,6 +31,13 @@ def open_intel_camera(config_filename: str):
     camera_handle = rs.pipeline()
     camera_pipeline_profile = camera_handle.start(camera_config)
     camera_device = camera_pipeline_profile.get_device()
+
+    with open("/home/avena/software/librealsense/wrappers/python/examples/box_dimensioner_multicam/HighResHighAccuracyPreset.json", 'r') as file:
+    # with open("/home/avena/vision3/high_accuracy_preset.json", 'r') as file:
+        json_text = file.read().strip()
+    advanced_mode = rs.rs400_advanced_mode(camera_device)
+    advanced_mode.load_json(json_text)
+
     sensors = camera_device.query_sensors()
     for sensor in sensors:
         if rs.sensor.as_depth_sensor(sensor):
@@ -48,7 +55,7 @@ def open_intel_camera(config_filename: str):
     color_intrinsic = color_profile.as_video_stream_profile().get_intrinsics()
 
     print('Waiting for a few seconds to start camera...')
-    time.sleep(2)
+    time.sleep(1.5)
 
     return camera_handle, {"fx": color_intrinsic.fx, "fy": color_intrinsic.fy, 
                            "cx": color_intrinsic.ppx, "cy": color_intrinsic.ppy, 
