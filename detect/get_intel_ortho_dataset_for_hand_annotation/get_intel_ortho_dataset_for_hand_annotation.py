@@ -235,10 +235,10 @@ if __name__ == '__main__':
             if color.size == 0 or depth.size == 0:
                 raise RuntimeError('Failed to get images. Reconnect cameras and run script again')
 
-            # NOTE: Zero out pixels which are out of view (value read empirically)
-            cutoff_val = 238
-            color[:, :cutoff_val, :] = [0, 0, 0]
-            depth[:, :cutoff_val] = 0
+            # # NOTE: Zero out pixels which are out of view (value read empirically)
+            # cutoff_val = 238
+            # color[:, :cutoff_val, :] = [0, 0, 0]
+            # depth[:, :cutoff_val] = 0
 
             print('Filtering depth in Z axis')
             depth = trunc_depth(depth, 1500)
@@ -246,40 +246,40 @@ if __name__ == '__main__':
             # Create point cloud using Open3D
             print('Creating point cloud from RGBD image')
             pcld = create_point_cloud(color, depth, camera_info)
+            o3d.io.write_point_cloud("cloud_0_frame_spatial.ply", pcld)
+            # # Get copy of points and colors
+            # points = np.asarray(pcld.points)
+            # colors = np.asarray(pcld.colors)
 
-            # Get copy of points and colors
-            points = np.asarray(pcld.points)
-            colors = np.asarray(pcld.colors)
+            # # Calculate orthographic view
+            # print('Calculating orthographic view')
+            # rgb_array, depth_array = calculate_rgbd_orthophoto(points, colors, voxel_size)
 
-            # Calculate orthographic view
-            print('Calculating orthographic view')
-            rgb_array, depth_array = calculate_rgbd_orthophoto(points, colors, voxel_size)
+            # # Crop ortho view images
+            # w_min = 0
+            # w_max = w_min + WIDTH
+            # h_min = 0
+            # h_max = h_min + HEIGHT
+            # rgb_array = rgb_array[h_min:h_max, w_min:w_max, :]
+            # depth_array = depth_array[h_min:h_max, w_min:w_max]
 
-            # Crop ortho view images
-            w_min = 0
-            w_max = w_min + WIDTH
-            h_min = 0
-            h_max = h_min + HEIGHT
-            rgb_array = rgb_array[h_min:h_max, w_min:w_max, :]
-            depth_array = depth_array[h_min:h_max, w_min:w_max]
-
-            # Make sure that images are WIDTHxHEIGHT
-            # Sometimes because of noise, number of rows might
-            # be less than desired so here we are adding black lines
-            # so result resolution is always the same
-            rows_add = HEIGHT - rgb_array.shape[0]
-            color_rows = np.zeros((rows_add, rgb_array.shape[1], 3), dtype=rgb_array.dtype)
-            rgb_array = np.vstack((rgb_array, color_rows))
-            depth_rows = np.zeros((rows_add, depth_array.shape[1]), dtype=depth_array.dtype)
-            depth_array = np.vstack((depth_array, depth_rows))
+            # # Make sure that images are WIDTHxHEIGHT
+            # # Sometimes because of noise, number of rows might
+            # # be less than desired so here we are adding black lines
+            # # so result resolution is always the same
+            # rows_add = HEIGHT - rgb_array.shape[0]
+            # color_rows = np.zeros((rows_add, rgb_array.shape[1], 3), dtype=rgb_array.dtype)
+            # rgb_array = np.vstack((rgb_array, color_rows))
+            # depth_rows = np.zeros((rows_add, depth_array.shape[1]), dtype=depth_array.dtype)
+            # depth_array = np.vstack((depth_array, depth_rows))
             
-            # Save images
-            ts_now = time.time_ns()
-            print(f'Saving images to "{base_dir}" directory')
-            cv2.imwrite(os.path.join(base_dir, f'{ts_now}_depth.png'), depth_array)
-            cv2.imwrite(os.path.join(base_dir, f'{ts_now}_color.png'), cv2.cvtColor(rgb_array, cv2.COLOR_RGB2BGR))
-            print(f'Save images called {cnt} times')
-            cnt += 1
+            # # Save images
+            # ts_now = time.time_ns()
+            # print(f'Saving images to "{base_dir}" directory')
+            # cv2.imwrite(os.path.join(base_dir, f'{ts_now}_depth.png'), depth_array)
+            # cv2.imwrite(os.path.join(base_dir, f'{ts_now}_color.png'), cv2.cvtColor(rgb_array, cv2.COLOR_RGB2BGR))
+            # print(f'Save images called {cnt} times')
+            # cnt += 1
             pressed_key = input('Pressed ENTER to make a photo (or "q" and then ENTER to exit): ')
     except Exception as e:
         print(f'[ERROR]: {e}')

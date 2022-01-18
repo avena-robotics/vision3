@@ -1,3 +1,8 @@
 build
 __pycache__
 .vscode
+.ipynb_checkpoints
+calibration_benchmark
+cam0123
+cam012345
+OLD_DATASETS

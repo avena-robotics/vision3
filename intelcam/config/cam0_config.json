@@ -1,0 +1,10 @@
+{
+    "serial_number": "021422060270",
+    "stream-depth-width": 1280,
+    "stream-depth-height": 720,
+    "stream-depth-fps": 30,
+    "stream-color-width": 1920,
+    "stream-color-height": 1080,
+    "stream-color-fps": 30,
+    "controls-laserpower": 360
+}
