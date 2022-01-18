@@ -20,6 +20,16 @@ def tsdf_scene_cloud(frames_color,
                      frames_depth,
                      camera_info,
                      device):
+    '''
+    This function is applying TSDF to the frames from single camera. 
+
+    @param: frames_color List of color frames
+    @param: frames_depth List of depth frames
+    @param: camera_info Dictionary with intrinsic parameters
+    @param: device Open3D device, GPU or CPU
+
+    @returns: o3d.t.geometry.PointCloud
+    '''
     volume = o3d.t.geometry.TSDFVoxelGrid(
         map_attrs_to_dtypes={
             'tsdf': o3d.core.Dtype.Float32,
@@ -59,6 +69,13 @@ def tsdf_scene_cloud(frames_color,
 
 
 def draw_registration_result(source: o3d.t.geometry.PointCloud, target: o3d.t.geometry.PointCloud, transformation):
+    '''
+    Visualizing two point clouds. One is transforem by @param: transformation.
+
+    @param: source o3d.t.geometry.PointCloud base point cloud
+    @param: target o3d.t.geometry.PointCloud transformed point cloud
+    @param: transformation Transformation applied to the target point cloud
+    '''
     source_temp = source.clone()
     target_temp = target.clone()
 
@@ -75,63 +92,74 @@ def draw_registration_result(source: o3d.t.geometry.PointCloud, target: o3d.t.ge
         # up=[0.3109, -0.5878, -0.7468])
 
 
-def tensor_colored_icp(source: o3d.t.geometry.PointCloud, target: o3d.t.geometry.PointCloud):
-    # Fit plane and extract
-    print('Removing table points from point clouds')
-    source_legacy = source.to_legacy()
-    _, inliers = source_legacy.segment_plane(distance_threshold=0.01,
-                                            ransac_n=3,
-                                            num_iterations=1000)
-    outlier_cloud = source_legacy.select_by_index(inliers, invert=True)
-    source = o3d.t.geometry.PointCloud.from_legacy(outlier_cloud)
+# def tensor_colored_icp(source: o3d.t.geometry.PointCloud, target: o3d.t.geometry.PointCloud):
+#     # Fit plane and extract
+#     print('Removing table points from point clouds')
+#     source_legacy = source.to_legacy()
+#     _, inliers = source_legacy.segment_plane(distance_threshold=0.01,
+#                                             ransac_n=3,
+#                                             num_iterations=1000)
+#     outlier_cloud = source_legacy.select_by_index(inliers, invert=True)
+#     source = o3d.t.geometry.PointCloud.from_legacy(outlier_cloud)
 
-    target_legacy = target.to_legacy()
-    _, inliers = target_legacy.segment_plane(distance_threshold=0.01,
-                                            ransac_n=3,
-                                            num_iterations=1000)
-    outlier_cloud = target_legacy.select_by_index(inliers, invert=True)
-    target = o3d.t.geometry.PointCloud.from_legacy(outlier_cloud)
-    o3d.visualization.draw([source, target])
+#     target_legacy = target.to_legacy()
+#     _, inliers = target_legacy.segment_plane(distance_threshold=0.01,
+#                                             ransac_n=3,
+#                                             num_iterations=1000)
+#     outlier_cloud = target_legacy.select_by_index(inliers, invert=True)
+#     target = o3d.t.geometry.PointCloud.from_legacy(outlier_cloud)
+#     o3d.visualization.draw([source, target])
 
-    # init_tf = np.array([[-0.99997, -0.00399, -0.01043, -0.01052],
-    #                                   [0.01065, -0.53904, -0.84164, 0.91812],
-    #                                   [-0.00297, -0.84169, 0.53908, 0.50068],
-    #                                   [0.00000, 0.00000, 0.00000, 1.00000]])
-    # source = source.clone().transform(init_tf)
+#     # init_tf = np.array([[-0.99997, -0.00399, -0.01043, -0.01052],
+#     #                                   [0.01065, -0.53904, -0.84164, 0.91812],
+#     #                                   [-0.00297, -0.84169, 0.53908, 0.50068],
+#     #                                   [0.00000, 0.00000, 0.00000, 1.00000]])
+#     # source = source.clone().transform(init_tf)
 
-    print('Running ICP')
-    source_cp = source.clone()
-    target_cp = target.clone()
-    source_cp.estimate_normals()
-    target_cp.estimate_normals()
-    source_cp.point["colors"] = source_cp.point["colors"].to(o3d.core.Dtype.Float32) / 255.0
-    target_cp.point["colors"] = target_cp.point["colors"].to(o3d.core.Dtype.Float32) / 255.0
+#     print('Running ICP')
+#     source_cp = source.clone()
+#     target_cp = target.clone()
+#     source_cp.estimate_normals()
+#     target_cp.estimate_normals()
+#     source_cp.point["colors"] = source_cp.point["colors"].to(o3d.core.Dtype.Float32) / 255.0
+#     target_cp.point["colors"] = target_cp.point["colors"].to(o3d.core.Dtype.Float32) / 255.0
 
-    init_source_to_target = np.identity(4)
-    estimation = o3d.t.pipelines.registration.TransformationEstimationForColoredICP()
-    criteria_list = [
-        o3d.t.pipelines.registration.ICPConvergenceCriteria(relative_fitness=0.0001,
-                                                            relative_rmse=0.0001,
-                                                            max_iteration=69),
-        o3d.t.pipelines.registration.ICPConvergenceCriteria(0.00001, 0.00001, 30),
-        o3d.t.pipelines.registration.ICPConvergenceCriteria(0.000001, 0.000001, 14)
-    ]
-    max_correspondence_distances = o3d.utility.DoubleVector([0.08, 0.04, 0.02])
-    voxel_sizes = o3d.utility.DoubleVector([0.04, 0.02, 0.01])
-    reg_multiscale_icp = o3d.t.pipelines.registration.multi_scale_icp(source_cp, target_cp, voxel_sizes,
-                                                                      criteria_list,
-                                                                      max_correspondence_distances,
-                                                                      init_source_to_target, estimation)
+#     init_source_to_target = np.identity(4)
+#     estimation = o3d.t.pipelines.registration.TransformationEstimationForColoredICP()
+#     criteria_list = [
+#         o3d.t.pipelines.registration.ICPConvergenceCriteria(relative_fitness=0.0001,
+#                                                             relative_rmse=0.0001,
+#                                                             max_iteration=69),
+#         o3d.t.pipelines.registration.ICPConvergenceCriteria(0.00001, 0.00001, 30),
+#         o3d.t.pipelines.registration.ICPConvergenceCriteria(0.000001, 0.000001, 14)
+#     ]
+#     max_correspondence_distances = o3d.utility.DoubleVector([0.08, 0.04, 0.02])
+#     voxel_sizes = o3d.utility.DoubleVector([0.04, 0.02, 0.01])
+#     reg_multiscale_icp = o3d.t.pipelines.registration.multi_scale_icp(source_cp, target_cp, voxel_sizes,
+#                                                                       criteria_list,
+#                                                                       max_correspondence_distances,
+#                                                                       init_source_to_target, estimation)
 
-    print("Fitness:", reg_multiscale_icp.fitness)
-    print("Inlier RMSE:", reg_multiscale_icp.inlier_rmse)
-    print("Estimated transformation:\n", reg_multiscale_icp.transformation)
-    draw_registration_result(source, target, reg_multiscale_icp.transformation)
-    # draw_registration_result(source, target, np.linalg.inv(init_source_to_target))
-    # draw_registration_result(source, target, init_source_to_target)
+#     print("Fitness:", reg_multiscale_icp.fitness)
+#     print("Inlier RMSE:", reg_multiscale_icp.inlier_rmse)
+#     print("Estimated transformation:\n", reg_multiscale_icp.transformation)
+#     draw_registration_result(source, target, reg_multiscale_icp.transformation)
+#     # draw_registration_result(source, target, np.linalg.inv(init_source_to_target))
+#     # draw_registration_result(source, target, init_source_to_target)
 
 
 def preprocess_point_cloud(pcd, voxel_size):
+    '''
+    This function is voxelizing point cloud and computing its Fast Point Feature Histogram.
+
+    @param: pcd Point cloud
+    @param: voxel_size Size of voxel 
+
+    @returns: pcd_down Voxelized point cloud
+    @returns: pcd_fpfh Fast Point Feature Histogram of given point cloud.
+    '''
+
+
     print(":: Downsample with a voxel size %.3f." % voxel_size)
     pcd_down = pcd.voxel_down_sample(voxel_size)
 
@@ -150,6 +178,16 @@ def preprocess_point_cloud(pcd, voxel_size):
 
 
 def global_point_clouds_registration(source: o3d.t.geometry.PointCloud, target: o3d.t.geometry.PointCloud) -> np.ndarray:
+
+    '''
+    This function performing global registration of two point clouds.
+
+    @param: source o3d.t.geometry.PointCloud source point cloud
+    @param: target o3d.t.geometry.PointCloud target point cloud. It's transform to source will be computed
+
+    @returns: np.ndarray Transformation matrix
+    '''
+
     source_legacy = source.to_legacy()
     target_legacy = target.to_legacy()
     voxel_size = 0.01
@@ -178,6 +216,16 @@ def global_point_clouds_registration(source: o3d.t.geometry.PointCloud, target: 
 
 
 def local_point_clouds_registration(source: o3d.t.geometry.PointCloud, target: o3d.t.geometry.PointCloud, initial_tf: np.ndarray) -> np.ndarray:
+    '''
+    Performing local registraion of two point clouds. Using Multiscale Colored ICP.
+
+    @param: source o3d.t.geometry.PointCloud source point cloud
+    @param: target o3d.t.geometry.PointCloud target point cloud. It's transform to source will be computed
+    @param: initial_tf Guess of transformation
+
+    @returns: np.ndarray Transformation matrix
+    
+    '''
     source.estimate_normals()
     target.estimate_normals()
     criteria_list = [
@@ -210,6 +258,16 @@ def local_point_clouds_registration(source: o3d.t.geometry.PointCloud, target: o
 
 
 def remove_plane(point_cloud: o3d.t.geometry.PointCloud) -> o3d.t.geometry.PointCloud:
+
+    '''
+    Removes plane from point cloud
+
+    @param: point_cloud o3d.t.geometry.PointCloud Point Cloud on which operation will be performed.
+
+    @returns: o3d.t.geometry.PointCloud point cloud with the plane cut
+
+    '''
+
     target_legacy = point_cloud.to_legacy()
     _, inliers = target_legacy.segment_plane(distance_threshold=0.01,
                                         ransac_n=3,
